@@ -1,0 +1,94 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+}
+
+// Enum para garantir que o status da ordem seja sempre um destes valores
+enum OrderStatus {
+  OPEN
+  IN_PROGRESS
+  FINISHED
+  PAID
+  CANCELLED
+}
+
+model Client {
+  id          String         @id @default(uuid())
+  name        String
+  phone       String
+  email       String?
+  address     String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  motorcycles Motorcycle[]
+  orders      OrderService[]
+
+  @@map("clients") // Boa prática: manter nomes de tabelas em minúsculo/plural no DB
+}
+
+model Motorcycle {
+  id           String         @id @default(uuid())
+  plate        String         @unique
+  brand        String?
+  model        String?
+  color        String?
+  year         Int?
+  
+  clientId     String
+  client       Client         @relation(fields: [clientId], references: [id])
+  orders       OrderService[]
+  createdAt    DateTime       @default(now())
+
+  @@map("motorcycles")
+}
+
+model Product {
+  id           String      @id @default(uuid())
+  name         String
+  sku          String?     @unique
+  description  String?
+  price        Decimal     @db.Decimal(10, 2)
+  costPrice    Decimal     @db.Decimal(10, 2)
+  stock        Int         @default(0)
+  minStock     Int         @default(2)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  orderItems   OrderItem[]
+
+  @@map("products")
+}
+
+model OrderService {
+  id              String       @id @default(uuid())
+  number          Int          @unique @default(autoincrement())
+  status          OrderStatus  @default(OPEN)
+  description     String?
+  totalValue      Decimal      @default(0) @db.Decimal(10, 2)
+  
+  clientId        String
+  client          Client       @relation(fields: [clientId], references: [id])
+  motorcycleId    String
+  motorcycle      Motorcycle   @relation(fields: [motorcycleId], references: [id])
+  
+  items           OrderItem[]
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@map("order_services")
+}
+
+model OrderItem {
+  id             String       @id @default(uuid())
+  quantity       Int
+  unitPrice      Decimal      @db.Decimal(10, 2)
+  
+  orderServiceId String
+  orderService   OrderService @relation(fields: [orderServiceId], references: [id])
+  productId      String
+  product        Product      @relation(fields: [productId], references: [id])
+
+  @@map("order_items")
+}
