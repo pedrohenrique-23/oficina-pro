@@ -3,7 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
+  provider = "postgresql" // ou mysql, sqlite etc.
+  url      = env("DATABASE_URL")
 }
 
 // Enum para garantir que o status da ordem seja sempre um destes valores
