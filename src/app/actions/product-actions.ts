@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { ProductService } from "@/services/product-service";
 import { z } from "zod";
+import prisma from "@/lib/prisma";
 
 // Schema de validação: Garante que os dados estão corretos antes de tocar o DB
 const productSchema = z.object({
@@ -30,5 +31,43 @@ export async function createProductAction(formData: FormData) {
   } catch (error) {
     console.error("Erro ao criar produto:", error);
     return { success: false, error: "Falha ao salvar o produto" };
+  }
+}
+
+// Ação para Excluir
+export async function deleteProductAction(id: string) {
+  try {
+    await prisma.product.delete({
+      where: { id }
+    });
+    revalidatePath("/products");
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: "Não é possível excluir um produto que já está vinculado a uma Ordem de Serviço." };
+  }
+}
+
+// Ação para Editar
+export async function updateProductAction(id: string, formData: FormData) {
+  const name = formData.get("name") as string;
+  const price = Number(formData.get("price"));
+  const stock = Number(formData.get("stock"));
+  const minStock = Number(formData.get("minStock"));
+
+  try {
+    await prisma.product.update({
+      where: { id },
+      data: {
+        name,
+        sku: formData.get("sku") as string,
+        price,
+        stock,
+        minStock,
+      }
+    });
+    revalidatePath("/products");
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: "Erro ao atualizar o produto." };
   }
 }

@@ -1,18 +1,13 @@
 import { ProductService } from "@/services/product-service";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PackageSearch, AlertTriangle } from "lucide-react";
+import { PackageSearch, AlertTriangle, Trash2 } from "lucide-react";
 import { CreateProductModal } from "./_components/create-product-modal";
+import { EditProductModal } from "./_components/edit-product-modal"; // Novo
+import { Button } from "@/components/ui/button";
+import { deleteProductAction } from "@/app/actions/product-actions"; // Novo
 
 export default async function ProductsPage() {
-  // Busca os produtos diretamente do servidor via Prisma
   const products = await ProductService.getAll();
 
   return (
@@ -22,7 +17,6 @@ export default async function ProductsPage() {
           <PackageSearch className="w-8 h-8" />
           Controle de Estoque
         </h1>
-        {/* Modal de cadastro de novos produtos */}
         <CreateProductModal />
       </div>
 
@@ -37,52 +31,40 @@ export default async function ProductsPage() {
                 <TableHead>Nome</TableHead>
                 <TableHead>SKU/Código</TableHead>
                 <TableHead>Preço</TableHead>
-                <TableHead className="text-right">Qtd. em Estoque</TableHead>
+                <TableHead>Qtd. Estoque</TableHead>
+                <TableHead className="text-right">Ações</TableHead> {/* Nova Coluna */}
               </TableRow>
             </TableHeader>
             <TableBody>
-              {products.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="text-center py-10 text-muted-foreground">
-                    Nenhum produto cadastrado ainda.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                products.map((product) => {
-                  // Lógica de Negócio: Verifica se o estoque atingiu o nível crítico definido no banco
-                  const isLowStock = product.stock <= product.minStock;
-
-                  return (
-                    <TableRow 
-                      key={product.id}
-                      className={isLowStock ? "bg-red-50/50 hover:bg-red-100/50 transition-colors" : ""}
-                    >
-                      <TableCell className="font-medium">
-                        <div className="flex flex-col">
-                          <span className={isLowStock ? "text-red-700" : ""}>
-                            {product.name}
-                          </span>
-                          {isLowStock && (
-                            <span className="flex items-center gap-1 mt-1 text-[10px] font-bold uppercase tracking-wider text-red-600">
-                              <AlertTriangle className="w-3 h-3" />
-                              Repor Estoque (Mínimo: {product.minStock})
-                            </span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {product.sku || "---"}
-                      </TableCell>
-                      <TableCell>
-                        R$ {Number(product.price).toFixed(2)}
-                      </TableCell>
-                      <TableCell className={`text-right font-bold text-lg ${isLowStock ? "text-red-600" : "text-green-700"}`}>
-                        {product.stock} un.
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
-              )}
+              {products.map((product) => {
+                const isLowStock = product.stock <= product.minStock;
+                return (
+                  <TableRow key={product.id} className={isLowStock ? "bg-red-50/50" : ""}>
+                    <TableCell className="font-medium">
+                      <div className="flex flex-col">
+                        <span className={isLowStock ? "text-red-700" : ""}>{product.name}</span>
+                        {isLowStock && <span className="text-[10px] font-bold text-red-600 uppercase flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> Repor</span>}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">{product.sku || "---"}</TableCell>
+                    <TableCell>R$ {Number(product.price).toFixed(2)}</TableCell>
+                    <TableCell className={`font-bold ${isLowStock ? "text-red-600" : ""}`}>{product.stock} un.</TableCell>
+                    
+                    {/* Botões de Ação */}
+                    <TableCell className="text-right space-x-2">
+                      <EditProductModal product={product} />
+                      <form action={async () => { 
+                        "use server"; 
+                        if(confirm(`Excluir ${product.name}?`)) await deleteProductAction(product.id); 
+                      }} className="inline">
+                        <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-700">
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </form>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </CardContent>
