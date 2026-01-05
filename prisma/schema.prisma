@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql" // ou mysql, sqlite etc.
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL") // Esta linha é o segredo para destravar o comando
 }
 
 // Enum para garantir que o status da ordem seja sempre um destes valores
@@ -67,6 +68,7 @@ model OrderService {
   number          Int          @unique @default(autoincrement())
   status          OrderStatus  @default(OPEN)
   description     String?
+  laborValue     Decimal          @default(0) @db.Decimal(10, 2)
   totalValue      Decimal      @default(0) @db.Decimal(10, 2)
   
   clientId        String
