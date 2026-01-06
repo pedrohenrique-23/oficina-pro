@@ -13,7 +13,7 @@ import { createOrderAction, updateOrderAction } from "@/app/actions/order-action
 interface OrderFormProps {
   clients: any[];
   products: any[];
-  initialData?: any; // Se presente, entramos em modo de edição
+  initialData?: any; 
 }
 
 export function OrderForm({ clients, products, initialData }: OrderFormProps) {

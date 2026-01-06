@@ -2,10 +2,10 @@
 
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { PaymentMethod } from "@prisma/client"; // Importação necessária para o novo parâmetro
 
 /**
  * 1. CRIAR ORDEM DE SERVIÇO
- * Calcula o total com Mão de Obra e baixa o estoque inicial.
  */
 export async function createOrderAction(data: {
   clientId: string;
@@ -16,7 +16,6 @@ export async function createOrderAction(data: {
 }) {
   try {
     const result = await prisma.$transaction(async (tx) => {
-      // Cálculo: Total = Σ (Peças) + Mão de Obra
       const itemsTotal = data.items.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0);
       const finalTotal = itemsTotal + data.laborValue;
 
@@ -38,7 +37,6 @@ export async function createOrderAction(data: {
         }
       });
 
-      // Baixa o estoque de cada peça utilizada
       for (const item of data.items) {
         await tx.product.update({
           where: { id: item.productId },
@@ -58,8 +56,7 @@ export async function createOrderAction(data: {
 }
 
 /**
- * 2. ATUALIZAR ORDEM DE SERVIÇO (RECONCILIAÇÃO)
- * Devolve itens antigos ao estoque, deleta-os e aplica a nova configuração.
+ * 2. ATUALIZAR ORDEM DE SERVIÇO
  */
 export async function updateOrderAction(id: string, data: {
   clientId: string;
@@ -70,7 +67,6 @@ export async function updateOrderAction(id: string, data: {
 }) {
   try {
     await prisma.$transaction(async (tx) => {
-      // Busca a O.S. atual para saber o que devolver ao estoque
       const oldOrder = await tx.orderService.findUnique({
         where: { id },
         include: { items: true }
@@ -79,7 +75,6 @@ export async function updateOrderAction(id: string, data: {
       if (!oldOrder) throw new Error("Ordem de Serviço não encontrada.");
       if (oldOrder.status === 'FINISHED') throw new Error("O.S. finalizada não pode ser editada.");
 
-      // Passo A: Estornar estoque das peças antigas
       for (const item of oldOrder.items) {
         await tx.product.update({
           where: { id: item.productId },
@@ -87,14 +82,11 @@ export async function updateOrderAction(id: string, data: {
         });
       }
 
-      // Passo B: Remover vínculos antigos
       await tx.orderItem.deleteMany({ where: { orderServiceId: id } });
 
-      // Passo C: Calcular novo total
       const itemsTotal = data.items.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0);
       const finalTotal = itemsTotal + data.laborValue;
 
-      // Passo D: Atualizar dados da O.S. e criar novos itens
       await tx.orderService.update({
         where: { id },
         data: {
@@ -113,7 +105,6 @@ export async function updateOrderAction(id: string, data: {
         }
       });
 
-      // Passo E: Baixar novo estoque
       for (const item of data.items) {
         await tx.product.update({
           where: { id: item.productId },
@@ -131,16 +122,22 @@ export async function updateOrderAction(id: string, data: {
 }
 
 /**
- * 3. FINALIZAR ORDEM DE SERVIÇO
- * Trava a edição para garantir integridade financeira.
+ * 3. FINALIZAR ORDEM DE SERVIÇO (Modificado)
+ * Agora recebe o método de pagamento e data de recebimento
  */
-export async function finishOrderAction(id: string) {
+export async function finishOrderAction(id: string, paymentMethod: PaymentMethod) {
   try {
     await prisma.orderService.update({
       where: { id },
-      data: { status: 'FINISHED' }
+      data: { 
+        status: 'FINISHED',
+        paymentMethod: paymentMethod, // Vincula o método selecionado
+        paidAt: new Date(),           // Seta a data do faturamento real
+      }
     });
+
     revalidatePath("/orders");
+    revalidatePath("/"); // Atualiza o Dashboard imediatamente
     return { success: true };
   } catch (error) {
     return { success: false, error: "Erro ao finalizar a ordem." };
@@ -149,17 +146,15 @@ export async function finishOrderAction(id: string) {
 
 /**
  * 4. EXCLUIR ORDEM DE SERVIÇO
- * Proteção contra exclusão de histórico concluído.
  */
 export async function deleteOrderAction(id: string) {
   try {
     const order = await prisma.orderService.findUnique({ where: { id } });
     
     if (order?.status === 'FINISHED') {
-      return { success: false, error: "Regra de Negócio: Não é permitido excluir uma O.S. finalizada." };
+      return { success: false, error: "Não é permitido excluir uma O.S. finalizada." };
     }
 
-    // Nota: Os itens serão deletados automaticamente se configurado 'onDelete: Cascade' no Prisma
     await prisma.orderService.delete({ where: { id } });
     revalidatePath("/orders");
     return { success: true };

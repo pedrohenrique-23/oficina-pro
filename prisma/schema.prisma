@@ -5,10 +5,18 @@ generator client {
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL") // Esta linha é o segredo para destravar o comando
+  directUrl = env("DIRECT_URL") // Essencial para operações de infraestrutura no Supabase
 }
 
-// Enum para garantir que o status da ordem seja sempre um destes valores
+// 1. Novo Enum para Formas de Pagamento
+enum PaymentMethod {
+  CASH
+  PIX
+  DEBIT
+  CREDIT
+}
+
+// Enum para o estado da ordem
 enum OrderStatus {
   OPEN
   IN_PROGRESS
@@ -28,7 +36,7 @@ model Client {
   motorcycles Motorcycle[]
   orders      OrderService[]
 
-  @@map("clients") // Boa prática: manter nomes de tabelas em minúsculo/plural no DB
+  @@map("clients")
 }
 
 model Motorcycle {
@@ -68,9 +76,13 @@ model OrderService {
   number          Int          @unique @default(autoincrement())
   status          OrderStatus  @default(OPEN)
   description     String?
-  laborValue     Decimal          @default(0) @db.Decimal(10, 2)
+  laborValue      Decimal      @default(0) @db.Decimal(10, 2)
   totalValue      Decimal      @default(0) @db.Decimal(10, 2)
   
+  // 2. Novos campos financeiros
+  paymentMethod   PaymentMethod? // Definido apenas quando a ordem for finalizada/paga
+  paidAt          DateTime?      // Registro de quando o dinheiro entrou no caixa
+
   clientId        String
   client          Client       @relation(fields: [clientId], references: [id])
   motorcycleId    String
