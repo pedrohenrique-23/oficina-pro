@@ -1,5 +1,6 @@
 // import type { Metadata } from "next";
 // import { Geist, Geist_Mono } from "next/font/google";
+import { Toaster } from "sonner";
 import "./globals.css";
 
 // const geistSans = Geist({
@@ -44,6 +45,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Sidebar />
           <main className="flex-1 ml-64 min-h-screen bg-slate-50 print:ml-0">
             {children}
+            <Toaster richColors position="top-right" />
           </main>
         </div>
       </body>
