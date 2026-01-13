@@ -3,7 +3,18 @@
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
-// Criar (Já existente)
+/**
+ * Função utilitária para limpar o cache das rotas dependentes
+ * Isso garante que o cliente apareça em Dropdowns e Tabelas
+ */
+function revalidateClientRoutes() {
+  revalidatePath("/clients");
+  revalidatePath("/motorcycles");
+  revalidatePath("/orders/new");
+  revalidatePath("/orders"); // Opcional: para atualizar filtros no dashboard de ordens
+}
+
+// 1. Criar Cliente
 export async function createClientAction(formData: FormData) {
   const name = formData.get("name") as string;
   const phone = formData.get("phone") as string;
@@ -16,14 +27,17 @@ export async function createClientAction(formData: FormData) {
     await prisma.client.create({
       data: { name, phone, email, address },
     });
-    revalidatePath("/clients");
+    
+    // Dispara a revalidação em cascata
+    revalidateClientRoutes();
+    
     return { success: true };
   } catch (error) {
     return { success: false, error: "Erro ao cadastrar cliente." };
   }
 }
 
-// Editar: Atualiza os dados do cliente
+// 2. Editar Cliente
 export async function updateClientAction(id: string, formData: FormData) {
   try {
     await prisma.client.update({
@@ -35,20 +49,25 @@ export async function updateClientAction(id: string, formData: FormData) {
         address: formData.get("address") as string,
       },
     });
-    revalidatePath("/clients");
+    
+    // Revalida pois a alteração do nome deve refletir nos selects de outras telas
+    revalidateClientRoutes();
+    
     return { success: true };
   } catch (error) {
     return { success: false, error: "Erro ao atualizar cliente." };
   }
 }
 
-// Excluir: Protege a integridade referencial
+// 3. Excluir Cliente
 export async function deleteClientAction(id: string) {
   try {
     await prisma.client.delete({
       where: { id },
     });
-    revalidatePath("/clients");
+    
+    revalidateClientRoutes();
+    
     return { success: true };
   } catch (error) {
     return { 
