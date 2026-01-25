@@ -8,6 +8,7 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+// ENUMS
 enum PaymentMethod {
   CASH
   PIX
@@ -23,16 +24,19 @@ enum OrderStatus {
   CANCELLED
 }
 
+// MODELOS
+
 model Client {
-  id          String         @id @default(uuid())
-  name        String
-  phone       String
-  email       String?
-  address     String?
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-  motorcycles Motorcycle[]
-  orders      OrderService[]
+  id           String         @id @default(uuid())
+  name         String
+  phone        String
+  email        String?
+  address      String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  motorcycles  Motorcycle[]
+  orders       OrderService[]
+  sales        Sale[]         // 🚀 Nova relação com Vendas Diretas
 
   @@map("clients")
 }
@@ -65,31 +69,33 @@ model Product {
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   orderItems  OrderItem[]
+  saleItems   SaleItem[]  // 🚀 Nova relação para itens de venda direta
 
   @@map("products")
 }
 
+// ESTRUTURA PARA ORDEM DE SERVIÇO (O.S.)
 model OrderService {
-  id             String        @id @default(uuid())
-  number         Int           @unique @default(autoincrement())
-  status         OrderStatus   @default(OPEN)
+  id             String         @id @default(uuid())
+  number         Int            @unique @default(autoincrement())
+  status         OrderStatus    @default(OPEN)
   description    String?
-  laborValue     Decimal       @default(0) @db.Decimal(10, 2)
-  totalValue     Decimal       @default(0) @db.Decimal(10, 2)
+  laborValue     Decimal        @default(0) @db.Decimal(10, 2)
+  totalValue     Decimal        @default(0) @db.Decimal(10, 2)
   
   paymentMethod  PaymentMethod?
   paidAt         DateTime?
 
   clientId       String
-  client         Client        @relation(fields: [clientId], references: [id])
+  client         Client         @relation(fields: [clientId], references: [id])
   motorcycleId   String
-  motorcycle     Motorcycle    @relation(fields: [motorcycleId], references: [id])
+  motorcycle     Motorcycle     @relation(fields: [motorcycleId], references: [id])
   
   items          OrderItem[]
   services       ServiceItem[] 
   
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
 
   @@map("order_services")
 }
@@ -118,4 +124,33 @@ model OrderItem {
   product        Product      @relation(fields: [productId], references: [id])
 
   @@map("order_items")
+}
+
+// 🚀 NOVOS MODELOS: VENDA DIRETA (BALCÃO)
+
+model Sale {
+  id            String         @id @default(uuid())
+  number        Int            @unique @default(autoincrement())
+  totalValue    Decimal        @db.Decimal(10, 2)
+  paymentMethod PaymentMethod
+  createdAt     DateTime       @default(now())
+
+  clientId      String
+  client        Client         @relation(fields: [clientId], references: [id])
+  items         SaleItem[]
+
+  @@map("sales")
+}
+
+model SaleItem {
+  id        String  @id @default(uuid())
+  quantity  Int
+  unitPrice Decimal @db.Decimal(10, 2)
+  
+  saleId    String
+  sale      Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+
+  @@map("sale_items")
 }

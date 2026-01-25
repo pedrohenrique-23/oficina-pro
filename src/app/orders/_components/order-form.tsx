@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Trash2, Save, Wrench, Package } from "lucide-react";
+import { Plus, Trash2, Save, Wrench, Package, ScanBarcode, Loader2 } from "lucide-react";
 import { createOrderAction, updateOrderAction } from "@/app/actions/order-actions";
 
 interface OrderFormProps {
@@ -18,7 +18,10 @@ interface OrderFormProps {
 
 export function OrderForm({ clients, products, initialData }: OrderFormProps) {
   const router = useRouter();
+  const barcodeInputRef = useRef<HTMLInputElement>(null);
+  
   const [isPending, setIsPending] = useState(false);
+  const [barcode, setBarcode] = useState("");
 
   const [selectedClientId, setSelectedClientId] = useState(initialData?.clientId || "");
   const [selectedMotorcycleId, setSelectedMotorcycleId] = useState(initialData?.motorcycleId || "");
@@ -39,6 +42,8 @@ export function OrderForm({ clients, products, initialData }: OrderFormProps) {
     })) || []
   );
 
+  // Cálculo do Total Geral:
+  // $$Total = \sum (itens \times unitário) + \sum (serviços)$$
   const totalValue = useMemo(() => {
     const itemsSum = orderItems.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0);
     const servicesSum = services.reduce((acc, service) => acc + service.price, 0);
@@ -49,6 +54,35 @@ export function OrderForm({ clients, products, initialData }: OrderFormProps) {
     const client = clients.find(c => c.id === selectedClientId);
     return client ? client.motorcycles : [];
   }, [selectedClientId, clients]);
+
+  // 🏷️ Lógica do Scanner de Código de Barras
+  const handleBarcodeScan = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      
+      const product = products.find((p) => p.sku === barcode);
+
+      if (product) {
+        const existingItemIndex = orderItems.findIndex(item => item.productId === product.id);
+        
+        if (existingItemIndex > -1) {
+          const newItems = [...orderItems];
+          newItems[existingItemIndex].quantity += 1;
+          setOrderItems(newItems);
+        } else {
+          setOrderItems([...orderItems, { 
+            productId: product.id, 
+            quantity: 1, 
+            unitPrice: Number(product.price) 
+          }]);
+        }
+        setBarcode("");
+      } else {
+        alert("Peça não encontrada pelo código de barras.");
+        setBarcode("");
+      }
+    }
+  };
 
   const handleAddService = () => setServices([...services, { description: "", price: 0 }]);
   
@@ -115,6 +149,7 @@ export function OrderForm({ clients, products, initialData }: OrderFormProps) {
 
   return (
     <div className="space-y-6">
+      {/* Dados do Cliente e Moto */}
       <Card>
         <CardContent className="pt-6 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -152,6 +187,7 @@ export function OrderForm({ clients, products, initialData }: OrderFormProps) {
         </CardContent>
       </Card>
 
+      {/* Serviços/Mão de Obra */}
       <Card className="border-blue-100 shadow-sm">
         <CardContent className="pt-6 space-y-4">
           <div className="flex justify-between items-center">
@@ -194,12 +230,32 @@ export function OrderForm({ clients, products, initialData }: OrderFormProps) {
         </CardContent>
       </Card>
 
+      {/* 🚀 NOVA SEÇÃO: LEITURA DE CÓDIGO DE BARRAS */}
+      <Card className="border-blue-200 bg-blue-50/20">
+        <CardContent className="pt-6">
+          <div className="space-y-2">
+            <Label className="text-xs font-bold uppercase flex items-center gap-2 text-blue-700">
+              <ScanBarcode className="w-4 h-4" /> Scanner de Peças (SKU)
+            </Label>
+            <Input
+              ref={barcodeInputRef}
+              placeholder="Aponte o leitor e escaneie a peça..."
+              className="bg-white border-blue-300 focus-visible:ring-blue-600"
+              value={barcode}
+              onChange={(e) => setBarcode(e.target.value)}
+              onKeyDown={handleBarcodeScan}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Peças Utilizadas */}
       <Card>
         <CardContent className="pt-6 space-y-4">
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-bold flex items-center gap-2"><Package className="w-5 h-5" /> Peças Utilizadas</h2>
             <Button type="button" variant="outline" size="sm" onClick={handleAddItem}>
-              <Plus className="w-4 h-4 mr-2" /> Adicionar Peça
+              <Plus className="w-4 h-4 mr-2" /> Seleção Manual
             </Button>
           </div>
 
@@ -211,7 +267,11 @@ export function OrderForm({ clients, products, initialData }: OrderFormProps) {
                   <Select value={item.productId} onValueChange={(val:string) => handleItemChange(index, "productId", val)}>
                     <SelectTrigger className="bg-white"><SelectValue placeholder="Selecione a peça" /></SelectTrigger>
                     <SelectContent>
-                      {products.map(p => <SelectItem key={p.id} value={p.id}>{p.name} (R$ {Number(p.price).toFixed(2)})</SelectItem>)}
+                      {products.map(p => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.name} (R$ {Number(p.price).toFixed(2)})
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -229,15 +289,26 @@ export function OrderForm({ clients, products, initialData }: OrderFormProps) {
                 </Button>
               </div>
             ))}
+            {orderItems.length === 0 && (
+              <p className="text-center py-6 text-slate-400 italic text-sm">
+                Nenhuma peça adicionada. Use o scanner ou o botão acima.
+              </p>
+            )}
           </div>
 
+          {/* Rodapé e Totalizador */}
           <div className="flex justify-between items-center pt-6 border-t mt-6">
             <div className="flex flex-col">
               <span className="text-xs text-muted-foreground uppercase font-black tracking-widest">Total Geral</span>
               <span className="text-4xl font-black text-blue-900 font-mono">R$ {totalValue.toFixed(2)}</span>
             </div>
             <Button onClick={handleSubmit} disabled={isPending} className="px-10 py-6 text-lg font-bold bg-slate-900 hover:bg-slate-800">
-              <Save className="w-5 h-5 mr-2" /> {initialData ? "Salvar Alterações" : "Gerar Ordem de Serviço"}
+              {isPending ? (
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+              ) : (
+                <Save className="w-5 h-5 mr-2" />
+              )}
+              {initialData ? "Salvar Alterações" : "Gerar Ordem de Serviço"}
             </Button>
           </div>
         </CardContent>

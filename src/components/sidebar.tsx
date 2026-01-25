@@ -9,13 +9,15 @@ import {
   Users, 
   Bike, 
   Wrench,
-  Settings
+  Settings,
+  ShoppingCart // 🚀 Novo ícone para Vendas
 } from "lucide-react";
-import { cn } from "@/lib/utils"; // Utilitário padrão do shadcn/ui
+import { cn } from "@/lib/utils";
 
 const menuItems = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Ordens de Serviço", href: "/orders", icon: ClipboardList },
+  { name: "Venda de Balcão", href: "/sales/new", icon: ShoppingCart }, // 🛒 Nova Rota
   { name: "Estoque", href: "/products", icon: Package },
   { name: "Clientes", href: "/clients", icon: Users },
   { name: "Motos", href: "/motorcycles", icon: Bike },
@@ -35,7 +37,9 @@ export function Sidebar() {
 
       <nav className="flex-1 p-4 space-y-2 mt-4">
         {menuItems.map((item) => {
-          const isActive = pathname === item.href;
+          // 🧠 Lógica de active: destaca se o pathname começar com o href (útil para sub-rotas)
+          const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+          
           return (
             <Link
               key={item.name}
