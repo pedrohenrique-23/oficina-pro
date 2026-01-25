@@ -9,22 +9,29 @@ export function DeleteOrderButton({ id, orderNumber }: { id: string, orderNumber
   const [isDeleting, setIsDeleting] = useState(false);
 
   async function handleDelete() {
+    // 1. Confirmação simples para evitar exclusão acidental [cite: 2026-01-24]
     const confirmed = window.confirm(
-      `Tem certeza que deseja excluir a O.S. #${orderNumber.toString().padStart(4, "0")}? Esta ação não pode ser desfeita e as peças voltarão ao estoque.`
+      `Tem certeza que deseja excluir a O.S. #${orderNumber.toString().padStart(4, "0")}? \n\nEsta ação não pode ser desfeita e as peças voltarão ao estoque.`
     );
     
     if (!confirmed) return;
 
     setIsDeleting(true);
-    const result = await deleteOrderAction(id);
     
-    // 🛠️ Ajuste para satisfazer o TypeScript:
-    if (result.success === false) {
-      // Como o sucesso é falso, o TS agora permite acessar o .error com segurança
-      alert(result.error);
+    try {
+      const result = await deleteOrderAction(id);
+      
+      // 🚀 A MÁGICA DO TYPESCRIPT: Narrowing [cite: 2026-01-24]
+      // Ao verificar explicitamente se success é 'false', o TS entende que 
+      // o objeto 'result' obrigatoriamente contém a propriedade 'error'.
+      if (result.success === false) {
+        alert(`Erro: ${result.error}`);
+      }
+    } catch (err) {
+      alert("Ocorreu um erro inesperado ao tentar excluir a ordem.");
+    } finally {
+      setIsDeleting(false);
     }
-    
-    setIsDeleting(false);
   }
 
   return (
@@ -33,9 +40,10 @@ export function DeleteOrderButton({ id, orderNumber }: { id: string, orderNumber
       size="icon" 
       disabled={isDeleting}
       onClick={handleDelete}
+      title="Excluir Ordem de Serviço"
       className="h-9 w-9 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
     >
-      <Trash2 className="w-4 h-4" />
+      <Trash2 className={`w-4 h-4 ${isDeleting ? "animate-pulse" : ""}`} />
     </Button>
   );
 }
