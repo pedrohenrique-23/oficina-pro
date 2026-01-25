@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { FinishOrderButton } from "./_components/finish-order-button";
 import { OrderDateFilter } from "./_components/order-date-filter";
+import { DeleteOrderButton } from "./_components/delete-order-button"; // 🚀 Novo componente importado
 import { cn } from "@/lib/utils";
 
 export default async function OrdersPage({
@@ -41,6 +42,7 @@ export default async function OrdersPage({
     orderBy: { createdAt: "desc" },
   });
 
+  // 🛠️ Conversão de Decimal para Number para evitar erro de serialização
   const orders = ordersRaw.map((order) => ({
     ...order,
     totalValue: Number(order.totalValue),
@@ -96,7 +98,7 @@ export default async function OrdersPage({
         <OrderDateFilter />
       </div>
 
-      {/* 📋 1. Tabela de Ordens (Agora no topo) */}
+      {/* 📋 1. Tabela de Ordens */}
       <Card className="shadow-sm border-slate-200">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-lg text-slate-700">
@@ -132,12 +134,12 @@ export default async function OrdersPage({
                       #{order.number.toString().padStart(4, "0")}
                     </TableCell>
                     <TableCell className="font-medium">{order.client.name}</TableCell>
-                    <TableCell className="text-slate-600">
+                    <td className="p-4 text-slate-600">
                       {order.motorcycle.brand} {order.motorcycle.model}
                       <span className="text-xs ml-2 bg-slate-100 px-1.5 py-0.5 rounded uppercase font-bold text-slate-500">
                         {order.motorcycle.plate}
                       </span>
-                    </TableCell>
+                    </td>
                     <TableCell>
                       <span className={cn(
                         "px-2 py-1 rounded-full text-[10px] font-black tracking-tight",
@@ -156,6 +158,8 @@ export default async function OrdersPage({
                           <Button variant="ghost" size="icon" asChild title="Editar O.S.">
                             <Link href={`/orders/${order.id}/edit`}><Edit2 className="w-4 h-4 text-amber-600" /></Link>
                           </Button>
+                          {/* 🗑️ Novo Botão de Excluir */}
+                          <DeleteOrderButton id={order.id} orderNumber={order.number} />
                         </>
                       )}
                       <Button variant="ghost" size="icon" asChild title="Ver detalhes">
@@ -170,7 +174,7 @@ export default async function OrdersPage({
         </CardContent>
       </Card>
 
-      {/* 💰 2. Cards de Resumo (Agora embaixo da tabela) */}
+      {/* 💰 2. Cards de Resumo */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pb-8">
         <Card className="bg-blue-50 border-blue-100 shadow-sm">
           <CardContent className="pt-6 flex items-center gap-4">

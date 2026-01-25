@@ -5,10 +5,9 @@ generator client {
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL") // Essencial para operações de infraestrutura no Supabase
+  directUrl = env("DIRECT_URL")
 }
 
-// 1. Novo Enum para Formas de Pagamento
 enum PaymentMethod {
   CASH
   PIX
@@ -16,7 +15,6 @@ enum PaymentMethod {
   CREDIT
 }
 
-// Enum para o estado da ordem
 enum OrderStatus {
   OPEN
   IN_PROGRESS
@@ -40,59 +38,73 @@ model Client {
 }
 
 model Motorcycle {
-  id           String         @id @default(uuid())
-  plate        String         @unique
-  brand        String?
-  model        String?
-  color        String?
-  year         Int?
+  id        String         @id @default(uuid())
+  plate     String         @unique
+  brand     String?
+  model     String?
+  color     String?
+  year      Int?
   
-  clientId     String
-  client       Client         @relation(fields: [clientId], references: [id])
-  orders       OrderService[]
-  createdAt    DateTime       @default(now())
+  clientId  String
+  client    Client         @relation(fields: [clientId], references: [id])
+  orders    OrderService[]
+  createdAt DateTime       @default(now())
 
   @@map("motorcycles")
 }
 
 model Product {
-  id           String      @id @default(uuid())
-  name         String
-  sku          String?     @unique
-  description  String?
-  price        Decimal     @db.Decimal(10, 2)
-  costPrice    Decimal     @db.Decimal(10, 2)
-  stock        Int         @default(0)
-  minStock     Int         @default(2)
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-  orderItems   OrderItem[]
+  id          String      @id @default(uuid())
+  name        String
+  sku         String?     @unique
+  description String?
+  price       Decimal     @db.Decimal(10, 2)
+  costPrice   Decimal     @db.Decimal(10, 2)
+  stock       Int         @default(0)
+  minStock    Int         @default(2)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  orderItems  OrderItem[]
 
   @@map("products")
 }
 
 model OrderService {
-  id              String       @id @default(uuid())
-  number          Int          @unique @default(autoincrement())
-  status          OrderStatus  @default(OPEN)
-  description     String?
-  laborValue      Decimal      @default(0) @db.Decimal(10, 2)
-  totalValue      Decimal      @default(0) @db.Decimal(10, 2)
+  id             String        @id @default(uuid())
+  number         Int           @unique @default(autoincrement())
+  status         OrderStatus   @default(OPEN)
+  description    String?
+  laborValue     Decimal       @default(0) @db.Decimal(10, 2)
+  totalValue     Decimal       @default(0) @db.Decimal(10, 2)
   
-  // 2. Novos campos financeiros
-  paymentMethod   PaymentMethod? // Definido apenas quando a ordem for finalizada/paga
-  paidAt          DateTime?      // Registro de quando o dinheiro entrou no caixa
+  paymentMethod  PaymentMethod?
+  paidAt         DateTime?
 
-  clientId        String
-  client          Client       @relation(fields: [clientId], references: [id])
-  motorcycleId    String
-  motorcycle      Motorcycle   @relation(fields: [motorcycleId], references: [id])
+  clientId       String
+  client         Client        @relation(fields: [clientId], references: [id])
+  motorcycleId   String
+  motorcycle     Motorcycle    @relation(fields: [motorcycleId], references: [id])
   
-  items           OrderItem[]
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  items          OrderItem[]
+  services       ServiceItem[] 
+  
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 
   @@map("order_services")
+}
+
+model ServiceItem {
+  id             String       @id @default(uuid())
+  description    String       
+  price          Decimal      @db.Decimal(10, 2)
+  
+  orderServiceId String
+  orderService   OrderService @relation(fields: [orderServiceId], references: [id], onDelete: Cascade)
+
+  createdAt      DateTime     @default(now())
+
+  @@map("service_items")
 }
 
 model OrderItem {
@@ -101,7 +113,7 @@ model OrderItem {
   unitPrice      Decimal      @db.Decimal(10, 2)
   
   orderServiceId String
-  orderService   OrderService @relation(fields: [orderServiceId], references: [id])
+  orderService   OrderService @relation(fields: [orderServiceId], references: [id], onDelete: Cascade)
   productId      String
   product        Product      @relation(fields: [productId], references: [id])
 

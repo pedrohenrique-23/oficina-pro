@@ -1,25 +1,44 @@
-// src/app/orders/new/page.tsx
-import { ClientService } from "@/services/client-service";
-import { ProductService } from "@/services/product-service";
-import { OrderForm } from "../_components/order-form"; // Criaremos este componente a seguir
-import { ClipboardPlus } from "lucide-react";
+import prisma from "@/lib/prisma";
+import { OrderForm } from "../_components/order-form";
 
 export default async function NewOrderPage() {
-  // Buscamos dados para os seletores
-  const [clients, products] = await Promise.all([
-    ClientService.getAll(), // Precisamos garantir que este getAll traga as motos também
-    ProductService.getAll()
+  const [clients, productsRaw] = await Promise.all([
+    // Buscamos clientes e suas motos
+    prisma.client.findMany({
+      include: { motorcycles: true },
+      orderBy: { name: "asc" }
+    }),
+    // Buscamos os produtos/peças
+    prisma.product.findMany({
+      orderBy: { name: "asc" }
+    }),
   ]);
 
-  return (
-    <div className="p-8 max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center gap-2">
-        <ClipboardPlus className="w-8 h-8 text-blue-600" />
-        <h1 className="text-3xl font-bold">Nova Ordem de Serviço</h1>
-      </div>
+  // 🚀 O AJUSTE CRÍTICO: Converter Decimal para Number
+  const products = productsRaw.map((p) => ({
+    ...p,
+    price: Number(p.price),
+    costPrice: Number(p.costPrice),
+  }));
 
-      {/* Passamos os dados para o componente de cliente que lidará com a interatividade */}
-      <OrderForm clients={clients} products={products} />
+  // Também precisamos garantir que as motos dentro dos clientes sejam passadas corretamente
+  // Se o seu Prisma já retorna as motos dentro do objeto client, o mapeamento abaixo ajuda:
+  const serializedClients = clients.map(client => ({
+    ...client,
+    motorcycles: client.motorcycles.map(m => ({
+      ...m,
+      // Caso a moto tenha algum campo Decimal (como valor de mercado), converta aqui
+    }))
+  }));
+
+  return (
+    <div className="p-8 max-w-7xl mx-auto space-y-6">
+      <h1 className="text-3xl font-black uppercase italic">Nova Ordem de Serviço</h1>
+      
+      <OrderForm 
+        clients={serializedClients} 
+        products={products} 
+      />
     </div>
   );
 }

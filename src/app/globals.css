@@ -123,3 +123,28 @@
     @apply bg-background text-foreground;
   }
 }
+
+@media print {
+  /* Força o tamanho da página para A4 e remove margens padrão do navegador */
+  @page {
+    size: A4;
+    margin: 1cm;
+  }
+
+  /* Esconde o cabeçalho e rodapé que o navegador insere (URL, data, título da aba) [cite: 10, 24] */
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Garante que o conteúdo não quebre no meio de uma tabela */
+  table, tr, td, .card {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Remove sombras e bordas pesadas para economizar tinta e parecer mais limpo */
+  .print\:shadow-none {
+    shadow: none !important;
+  }
+}

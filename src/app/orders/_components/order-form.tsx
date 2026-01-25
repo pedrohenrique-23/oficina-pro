@@ -20,13 +20,17 @@ export function OrderForm({ clients, products, initialData }: OrderFormProps) {
   const router = useRouter();
   const [isPending, setIsPending] = useState(false);
 
-  // Estados iniciais dinâmicos
   const [selectedClientId, setSelectedClientId] = useState(initialData?.clientId || "");
   const [selectedMotorcycleId, setSelectedMotorcycleId] = useState(initialData?.motorcycleId || "");
   const [description, setDescription] = useState(initialData?.description || "");
-  const [laborValue, setLaborValue] = useState(initialData ? Number(initialData.laborValue) : 0);
-  
-  // Mapeia itens existentes ou inicia com lista vazia
+
+  const [services, setServices] = useState<{ description: string; price: number }[]>(
+    initialData?.services?.map((s: any) => ({
+      description: s.description,
+      price: Number(s.price)
+    })) || [{ description: "", price: 0 }]
+  );
+
   const [orderItems, setOrderItems] = useState<{ productId: string; quantity: number; unitPrice: number }[]>(
     initialData?.items.map((item: any) => ({
       productId: item.productId,
@@ -35,17 +39,29 @@ export function OrderForm({ clients, products, initialData }: OrderFormProps) {
     })) || []
   );
 
-  // Cálculo do Valor Total (Peças + Mão de Obra)
   const totalValue = useMemo(() => {
     const itemsSum = orderItems.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0);
-    return itemsSum + laborValue;
-  }, [orderItems, laborValue]);
+    const servicesSum = services.reduce((acc, service) => acc + service.price, 0);
+    return itemsSum + servicesSum;
+  }, [orderItems, services]);
 
-  // Filtra as motos do cliente selecionado
   const availableMotorcycles = useMemo(() => {
     const client = clients.find(c => c.id === selectedClientId);
     return client ? client.motorcycles : [];
   }, [selectedClientId, clients]);
+
+  const handleAddService = () => setServices([...services, { description: "", price: 0 }]);
+  
+  const handleRemoveService = (index: number) => {
+    const newServices = services.filter((_, i) => i !== index);
+    setServices(newServices);
+  };
+
+  const handleServiceChange = (index: number, field: string, value: any) => {
+    const newServices = [...services];
+    (newServices[index] as any)[field] = field === "price" ? Number(value) : value;
+    setServices(newServices);
+  };
 
   const handleAddItem = () => {
     setOrderItems([...orderItems, { productId: "", quantity: 1, unitPrice: 0 }]);
@@ -74,10 +90,17 @@ export function OrderForm({ clients, products, initialData }: OrderFormProps) {
 
     setIsPending(true);
     
-    // Define se chama a ação de Criar ou Atualizar
+    const payload = { 
+      clientId: selectedClientId, 
+      motorcycleId: selectedMotorcycleId, 
+      description, 
+      services,
+      items: orderItems 
+    };
+
     const action = initialData 
-      ? updateOrderAction(initialData.id, { clientId: selectedClientId, motorcycleId: selectedMotorcycleId, description, laborValue, items: orderItems })
-      : createOrderAction({ clientId: selectedClientId, motorcycleId: selectedMotorcycleId, description, laborValue, items: orderItems });
+      ? updateOrderAction(initialData.id, payload)
+      : createOrderAction(payload);
 
     const result = await action;
     setIsPending(false);
@@ -119,26 +142,54 @@ export function OrderForm({ clients, products, initialData }: OrderFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label>Descrição do Serviço</Label>
+            <Label>Observações Gerais</Label>
             <Input 
-              placeholder="Descreva o que será feito..." 
+              placeholder="Notas adicionais sobre a ordem..." 
               value={description} 
               onChange={(e) => setDescription(e.target.value)} 
             />
           </div>
+        </CardContent>
+      </Card>
 
-          <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 flex items-center gap-4">
-            <div className="bg-blue-600 p-2 rounded-full text-white"><Wrench className="w-5 h-5" /></div>
-            <div className="flex-1">
-              <Label className="text-blue-900 font-bold uppercase text-xs">Valor da Mão de Obra (R$)</Label>
-              <Input 
-                type="number" 
-                step="0.01" 
-                className="bg-white"
-                value={laborValue}
-                onChange={(e) => setLaborValue(Number(e.target.value))}
-              />
-            </div>
+      <Card className="border-blue-100 shadow-sm">
+        <CardContent className="pt-6 space-y-4">
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-bold flex items-center gap-2 text-blue-900"><Wrench className="w-5 h-5" /> Serviços Realizados</h2>
+            <Button type="button" variant="outline" size="sm" onClick={handleAddService} className="border-blue-200 text-blue-700 hover:bg-blue-50">
+              <Plus className="w-4 h-4 mr-2" /> Adicionar Serviço
+            </Button>
+          </div>
+
+          <div className="space-y-3">
+            {services.map((service, index) => (
+              <div key={index} className="flex gap-4 items-end bg-blue-50/50 p-4 rounded-lg border border-blue-100">
+                <div className="flex-1 space-y-1">
+                  <Label className="text-xs text-blue-800">Descrição da Mão de Obra</Label>
+                  <Input 
+                    placeholder="Ex: Revisão Geral" 
+                    className="bg-white"
+                    value={service.description} 
+                    onChange={(e) => handleServiceChange(index, "description", e.target.value)} 
+                  />
+                </div>
+                <div className="w-32 space-y-1">
+                  <Label className="text-xs text-blue-800">Valor (R$)</Label>
+                  <Input 
+                    type="number" 
+                    step="0.01"
+                    className="bg-white font-bold"
+                    value={service.price} 
+                    onChange={(e) => handleServiceChange(index, "price", e.target.value)} 
+                  />
+                </div>
+                {services.length > 1 && (
+                  <Button variant="ghost" size="icon" className="text-red-400 hover:text-red-600" onClick={() => handleRemoveService(index)}>
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>
@@ -168,7 +219,7 @@ export function OrderForm({ clients, products, initialData }: OrderFormProps) {
                   <Label className="text-xs">Qtd</Label>
                   <Input 
                     type="number" 
-                    className="bg-white"
+                    className="bg-white" 
                     value={item.quantity} 
                     onChange={(e) => handleItemChange(index, "quantity", Number(e.target.value))} 
                   />
@@ -185,7 +236,7 @@ export function OrderForm({ clients, products, initialData }: OrderFormProps) {
               <span className="text-xs text-muted-foreground uppercase font-black tracking-widest">Total Geral</span>
               <span className="text-4xl font-black text-blue-900 font-mono">R$ {totalValue.toFixed(2)}</span>
             </div>
-            <Button onClick={handleSubmit} disabled={isPending} className="px-10 py-6 text-lg font-bold">
+            <Button onClick={handleSubmit} disabled={isPending} className="px-10 py-6 text-lg font-bold bg-slate-900 hover:bg-slate-800">
               <Save className="w-5 h-5 mr-2" /> {initialData ? "Salvar Alterações" : "Gerar Ordem de Serviço"}
             </Button>
           </div>
