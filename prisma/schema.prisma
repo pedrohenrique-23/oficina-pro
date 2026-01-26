@@ -135,8 +135,8 @@ model Sale {
   paymentMethod PaymentMethod
   createdAt     DateTime       @default(now())
 
-  clientId      String
-  client        Client         @relation(fields: [clientId], references: [id])
+  clientId      String?
+  client        Client ?        @relation(fields: [clientId], references: [id])
   items         SaleItem[]
 
   @@map("sales")

@@ -9,41 +9,34 @@ import { Input } from "@/components/ui/input";
 import { createSaleAction } from "@/app/actions/sale-actions";
 
 interface SaleFormProps {
-  clients: any[];
-  products: any[];
+  products: any[]; // Removida a necessidade de receber 'clients' [cite: 2026-01-24]
 }
 
-export function SaleForm({ clients, products }: SaleFormProps) {
+export function SaleForm({ products }: SaleFormProps) {
   const router = useRouter();
   const barcodeInputRef = useRef<HTMLInputElement>(null);
   
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedClientId, setSelectedClientId] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("CASH");
   const [barcode, setBarcode] = useState("");
   const [items, setItems] = useState<{ productId: string; quantity: number; unitPrice: number }[]>([]);
 
-  // 🧮 Cálculo do Total Geral usando a fórmula:
+  // 🧮 Cálculo do Total Geral:
   // $$Total = \sum_{i=1}^{n} (Quantity_i \times UnitPrice_i)$$
   const totalValue = useMemo(() => {
     return items.reduce((acc, item) => acc + item.quantity * item.unitPrice, 0);
   }, [items]);
 
-  // 🏷️ Lógica do Scanner de Código de Barras (SKU)
   const handleBarcodeScan = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      
-      // Procura o produto pelo SKU cadastrado no banco
       const product = products.find((p) => p.sku === barcode);
 
       if (product) {
         if (product.stock <= 0) {
           alert(`O produto "${product.name}" está sem estoque!`);
         } else {
-          // Adiciona automaticamente o item ou incrementa se já existir
           const existingItemIndex = items.findIndex(item => item.productId === product.id);
-          
           if (existingItemIndex > -1) {
             const newItems = [...items];
             newItems[existingItemIndex].quantity += 1;
@@ -54,7 +47,7 @@ export function SaleForm({ clients, products }: SaleFormProps) {
         }
         setBarcode("");
       } else {
-        alert("Produto não encontrado pelo código de barras.");
+        alert("Produto não encontrado.");
         setBarcode("");
       }
     }
@@ -80,20 +73,20 @@ export function SaleForm({ clients, products }: SaleFormProps) {
   };
 
   async function onSubmit() {
-    if (!selectedClientId || items.length === 0) {
-      alert("Selecione o cliente e adicione ao menos um produto.");
+    // 🚀 Validação simplificada: apenas verifica se há itens [cite: 2026-01-24]
+    if (items.length === 0) {
+      alert("Adicione ao menos um produto.");
       return;
     }
 
     setIsSubmitting(true);
     const result = await createSaleAction({
-      clientId: selectedClientId,
       paymentMethod: paymentMethod as any,
       items,
     });
 
     if (result.success) {
-      router.push("/orders"); 
+      router.push("/orders"); // Redireciona para o fluxo principal [cite: 2026-01-24]
       router.refresh();
     } else {
       alert(result.error);
@@ -104,7 +97,6 @@ export function SaleForm({ clients, products }: SaleFormProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       <div className="md:col-span-2 space-y-6">
-        {/* 🚀 CAMPO DE SCANNER (CÓDIGO DE BARRAS) */}
         <Card className="border-blue-200 bg-blue-50/30">
           <CardContent className="pt-6">
             <div className="space-y-2">
@@ -120,9 +112,6 @@ export function SaleForm({ clients, products }: SaleFormProps) {
                 onChange={(e) => setBarcode(e.target.value)}
                 onKeyDown={handleBarcodeScan}
               />
-              <p className="text-[10px] text-blue-500 italic">
-                O foco automático está ativado. Basta usar o leitor para adicionar peças.
-              </p>
             </div>
           </CardContent>
         </Card>
@@ -175,12 +164,6 @@ export function SaleForm({ clients, products }: SaleFormProps) {
                 </Button>
               </div>
             ))}
-            
-            {items.length === 0 && (
-              <p className="text-center py-8 text-muted-foreground italic text-sm">
-                Nenhum item adicionado. Use o leitor de código de barras ou o botão acima.
-              </p>
-            )}
           </CardContent>
         </Card>
       </div>
@@ -188,20 +171,7 @@ export function SaleForm({ clients, products }: SaleFormProps) {
       <div className="space-y-6">
         <Card className="bg-slate-50 border-2 sticky top-6">
           <CardContent className="pt-6 space-y-4">
-            <div>
-              <label className="text-xs font-bold uppercase mb-1 block">Cliente</label>
-              <select
-                className="w-full border rounded-md p-2 bg-white"
-                value={selectedClientId}
-                onChange={(e) => setSelectedClientId(e.target.value)}
-              >
-                <option value="">Selecione o cliente...</option>
-                {clients.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
-            </div>
-
+            {/* Bloco de cliente removido para venda anônima [cite: 2026-01-24] */}
             <div>
               <label className="text-xs font-bold uppercase mb-1 block">Forma de Pagamento</label>
               <select
@@ -217,14 +187,14 @@ export function SaleForm({ clients, products }: SaleFormProps) {
             </div>
 
             <div className="pt-4 border-t border-slate-200">
-              <p className="text-xs font-bold uppercase text-slate-500">Valor Total a Pagar</p>
+              <p className="text-xs font-bold uppercase text-slate-500">Valor Total</p>
               <p className="text-4xl font-black text-blue-900 tracking-tight">
                 R$ {totalValue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
               </p>
             </div>
 
             <Button 
-              className="w-full h-14 text-lg font-bold uppercase tracking-wider shadow-lg shadow-blue-900/10" 
+              className="w-full h-14 text-lg font-bold uppercase tracking-wider" 
               onClick={onSubmit} 
               disabled={isSubmitting}
             >

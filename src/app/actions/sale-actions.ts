@@ -5,16 +5,16 @@ import { revalidatePath } from "next/cache";
 import { PaymentMethod } from "@prisma/client";
 
 /**
- * CRIAR VENDA DE BALCÃO (Direta) [cite: 2026-01-24]
+ * CRIAR VENDA DE BALCÃO (Direta e Anônima) [cite: 2026-01-24]
  */
 export async function createSaleAction(data: {
-  clientId: string;
+  clientId?: string; // Opcional para vendas rápidas [cite: 2026-01-24]
   paymentMethod: PaymentMethod;
   items: { productId: string; quantity: number; unitPrice: number }[];
 }) {
   try {
     const result = await prisma.$transaction(async (tx) => {
-      // 1. Calcula o total da venda [cite: 2026-01-24]
+      // 1. Calcula o total da venda
       const totalValue = data.items.reduce(
         (acc, item) => acc + item.quantity * item.unitPrice,
         0
@@ -23,7 +23,7 @@ export async function createSaleAction(data: {
       // 2. Cria o registro da Venda [cite: 2026-01-24]
       const sale = await tx.sale.create({
         data: {
-          clientId: data.clientId,
+          clientId: data.clientId || null, // Salva nulo se não houver cliente [cite: 2026-01-24]
           paymentMethod: data.paymentMethod,
           totalValue: totalValue,
           items: {
@@ -36,7 +36,7 @@ export async function createSaleAction(data: {
         },
       });
 
-      // 3. Baixa automática do estoque [cite: 2026-01-24]
+      // 3. Baixa automática do estoque
       for (const item of data.items) {
         const product = await tx.product.findUnique({ where: { id: item.productId } });
         
@@ -55,7 +55,7 @@ export async function createSaleAction(data: {
 
     revalidatePath("/sales");
     revalidatePath("/products");
-    revalidatePath("/"); // Atualiza o dashboard [cite: 2026-01-24]
+    revalidatePath("/"); 
     
     return { success: true, saleId: result.id };
   } catch (error: any) {
