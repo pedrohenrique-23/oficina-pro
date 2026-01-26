@@ -1,22 +1,18 @@
-// src/app/sales/new/page.tsx
-
 import prisma from "@/lib/prisma";
 import { SaleForm } from "../_components/sale-form";
 
 export default async function NewSalePage() {
-  const [clients, productsRaw] = await Promise.all([
-    prisma.client.findMany({ orderBy: { name: "asc" } }),
-    prisma.product.findMany({ 
-      where: { stock: { gt: 0 } },
-      orderBy: { name: "asc" } 
-    }),
-  ]);
+  // 1. Removemos a busca de clientes (não é mais necessária) [cite: 2026-01-24]
+  const productsRaw = await prisma.product.findMany({ 
+    where: { stock: { gt: 0 } },
+    orderBy: { name: "asc" } 
+  });
 
-  // 🚀 A CORREÇÃO: Mapeamos os produtos para transformar Decimal em Number
+  // 2. Resolve o erro da image_b6663e (Serialização de Decimal)
   const products = productsRaw.map((p) => ({
     ...p,
-    price: Number(p.price),      // Converte o objeto Decimal para número puro
-    costPrice: Number(p.costPrice) // Faz o mesmo com o preço de custo para evitar o erro
+    price: Number(p.price),
+    costPrice: Number(p.costPrice)
   }));
 
   return (
@@ -25,11 +21,11 @@ export default async function NewSalePage() {
         <h1 className="text-3xl font-black uppercase italic text-slate-900">
           Venda de Balcão
         </h1>
-        <p className="text-slate-500 text-sm">Registro de venda direta sem ordem de serviço.</p>
+        <p className="text-slate-500 text-sm">Registro de venda rápida e anônima.</p>
       </div>
 
-      {/* Agora os dados estão limpos e o erro vai sumir! */}
-      <SaleForm clients={clients} products={products} />
+      {/* 🚀 CORREÇÃO: Removemos a prop 'clients' que causou o erro no log */}
+      <SaleForm products={products} />
     </div>
   );
 }
