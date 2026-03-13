@@ -13,6 +13,7 @@ import {
   ShoppingCart // 🚀 Novo ícone para Vendas
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import Image from 'next/image';
 
 const menuItems = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
@@ -59,6 +60,15 @@ export function Sidebar() {
             </Link>
           );
         })}
+
+        <Image 
+        src="/logo.png" // Caminho dentro da pasta public
+        alt="Logo Oficina Pro"
+        width={300}             // Largura definida em pixels
+        height={300}              // Altura definida em pixels
+        className="mx-auto block"
+        priority                // Carrega a imagem com prioridade (bom para logos)
+      />
       </nav>
 
       <div className="p-4 border-t border-slate-800">

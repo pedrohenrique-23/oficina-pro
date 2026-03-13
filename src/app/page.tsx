@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DollarSign, ClipboardList, Wrench, Package, Banknote, QrCode, CreditCard } from "lucide-react";
+import Image from 'next/image';
 
 export default async function DashboardPage() {
   // 1. Busca ordens finalizadas com os novos campos de pagamento
@@ -37,6 +38,14 @@ export default async function DashboardPage() {
   return (
     <div className="p-8 space-y-10">
       <header>
+        <Image 
+        src="/logo.png" // Caminho dentro da pasta public
+        alt="Logo Oficina Pro"
+        width={300}             // Largura definida em pixels
+        height={300}              // Altura definida em pixels
+        className="mx-auto block"
+        priority                // Carrega a imagem com prioridade (bom para logos)
+      />
         <h1 className="text-3xl font-black text-slate-900 tracking-tight italic">Dashboard Oficina Pro</h1>
         <p className="text-muted-foreground font-medium">Análise de faturamento e fluxo de caixa.</p>
       </header>
