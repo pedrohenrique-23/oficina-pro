@@ -23,7 +23,7 @@ export async function createSaleAction(data: {
       // 2. Cria o registro da Venda [cite: 2026-01-24]
       const sale = await tx.sale.create({
         data: {
-          clientId: data.clientId || null, // Salva nulo se não houver cliente [cite: 2026-01-24]
+          clientId: data.clientId || undefined, // Salva nulo se não houver cliente [cite: 2026-01-24]
           paymentMethod: data.paymentMethod,
           totalValue: totalValue,
           items: {

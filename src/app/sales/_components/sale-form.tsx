@@ -73,26 +73,23 @@ export function SaleForm({ products }: SaleFormProps) {
   };
 
   async function onSubmit() {
-    // 🚀 Validação simplificada: apenas verifica se há itens [cite: 2026-01-24]
-    if (items.length === 0) {
-      alert("Adicione ao menos um produto.");
-      return;
-    }
+  if (items.length === 0) return alert("Adicione itens!");
 
-    setIsSubmitting(true);
-    const result = await createSaleAction({
-      paymentMethod: paymentMethod as any,
-      items,
-    });
+  setIsSubmitting(true);
+  const result = await createSaleAction({
+    paymentMethod: paymentMethod as any,
+    items,
+  });
 
-    if (result.success) {
-      router.push("/orders"); // Redireciona para o fluxo principal [cite: 2026-01-24]
-      router.refresh();
-    } else {
-      alert(result.error);
-    }
-    setIsSubmitting(false);
+  if (result.success) {
+    // 🚀 Redireciona para a página do recibo que acabamos de criar
+    router.push(`/sales/${result.saleId}`); 
+    router.refresh();
+  } else {
+    alert(result.error);
   }
+  setIsSubmitting(false);
+}
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
