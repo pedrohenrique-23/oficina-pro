@@ -15,7 +15,6 @@ interface OrderDetailsProps {
 export default async function OrderDetailsPage({ params }: OrderDetailsProps) {
   const { id } = await params;
 
-  // 1. Busca os dados completos no banco de dados
   const orderRaw = await prisma.orderService.findUnique({
     where: { id },
     include: {
@@ -30,7 +29,6 @@ export default async function OrderDetailsPage({ params }: OrderDetailsProps) {
 
   if (!orderRaw) notFound();
 
-  // 2. Sanitização: Converte Decimal (Prisma) para Number (JS)
   const order = {
     ...orderRaw,
     totalValue: Number(orderRaw.totalValue),
@@ -51,9 +49,7 @@ export default async function OrderDetailsPage({ params }: OrderDetailsProps) {
   return (
     <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6">
       
-      {/* ==========================================================
-          VISÃO DE TELA (Desktop/Mobile) - Escondida na Impressão
-          ========================================================== */}
+      {/* VISÃO DE TELA (Desktop/Mobile) - Escondida na Impressão */}
       <div className="flex justify-between items-center print:hidden">
         <Button variant="ghost" asChild className="gap-2">
           <Link href="/orders">
@@ -75,7 +71,7 @@ export default async function OrderDetailsPage({ params }: OrderDetailsProps) {
         <CardHeader className="border-b text-center space-y-2">
           <div className="flex justify-between items-start text-left">
             <div>
-              <h1 className="text-2xl font-bold uppercase tracking-tighter">Oficina Pro</h1>
+              <h1 className="text-2xl font-bold uppercase tracking-tighter text-slate-900">Oficina Pro</h1>
               <p className="text-xs text-muted-foreground italic">Especialistas em Duas Rodas</p>
             </div>
             <div className="text-right">
@@ -88,7 +84,6 @@ export default async function OrderDetailsPage({ params }: OrderDetailsProps) {
         </CardHeader>
 
         <CardContent className="space-y-8 pt-6">
-          {/* Dados do Cliente e Veículo */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 border-b pb-6">
             <div className="space-y-1">
               <h3 className="text-xs font-bold flex items-center gap-2 uppercase text-muted-foreground">
@@ -108,10 +103,9 @@ export default async function OrderDetailsPage({ params }: OrderDetailsProps) {
             </div>
           </div>
 
-          {/* Serviços */}
           <div className="space-y-3">
             <h3 className="text-xs font-bold uppercase flex items-center gap-2"><Wrench className="w-4 h-4" /> Serviços</h3>
-            <Table className="border">
+            <Table className="border text-slate-900">
               <TableBody>
                 {order.services.map(s => (
                   <TableRow key={s.id}>
@@ -123,10 +117,9 @@ export default async function OrderDetailsPage({ params }: OrderDetailsProps) {
             </Table>
           </div>
 
-          {/* Peças */}
           <div className="space-y-3">
             <h3 className="text-xs font-bold uppercase flex items-center gap-2"><Package className="w-4 h-4" /> Peças</h3>
-            <Table className="border">
+            <Table className="border text-slate-900">
               <TableBody>
                 {order.items.length === 0 ? (
                   <TableRow><TableCell className="text-center italic py-4">Nenhuma peça utilizada.</TableCell></TableRow>
@@ -142,80 +135,88 @@ export default async function OrderDetailsPage({ params }: OrderDetailsProps) {
             </Table>
           </div>
 
-          {/* Total na Tela */}
           <div className="text-right pt-4 border-t-2 border-double">
             <p className="text-xs font-bold text-muted-foreground uppercase">Valor Total Geral</p>
-            <p className="text-4xl font-black text-blue-900 tracking-tighter">R$ {order.totalValue.toFixed(2)}</p>
+            <p className="text-4xl font-black text-blue-900 tracking-tighter text-slate-900">R$ {order.totalValue.toFixed(2)}</p>
           </div>
         </CardContent>
       </Card>
 
-      {/* ==========================================================
-          VISÃO TÉRMICA (58mm) - Aparece APENAS na Impressão
-          ========================================================== */}
-      <div className="hidden print:block w-[58mm] font-mono text-[9px] leading-tight text-black bg-white mx-auto p-1">
-        {/* CSS Específico para Bobina Térmica */}
+      {/* 🚀 VISÃO TÉRMICA (58mm) - Ajustada para parar o papel infinito */}
+      <div className="hidden print:block w-[58mm] font-mono text-[9px] leading-tight text-black bg-white mx-auto">
         <style dangerouslySetInnerHTML={{ __html: `
           @media print {
-            @page { size: 58mm auto; margin: 0; }
-            body { margin: 0; padding: 0; background: white; -webkit-print-color-adjust: exact; }
+            @page { 
+              size: 58mm auto; 
+              margin: 0 !important; 
+            }
+            html, body {
+              margin: 0 !important;
+              padding: 0 !important;
+              height: auto !important;
+              overflow: visible !important;
+            }
+            body {
+              width: 58mm !important;
+              -webkit-print-color-adjust: exact;
+            }
+            /* Remove cabeçalhos e rodapés forçadamente */
+            footer, header, .header, .footer { display: none !important; }
           }
         `}} />
 
-        <div className="text-center border-b border-dashed border-black pb-2 mb-2">
-          <h2 className="font-bold text-xs uppercase">Oficina Pro</h2>
-          <p className="font-bold mt-1 text-[10px]">O.S. #{order.number.toString().padStart(4, '0')}</p>
-          <p>{new Date(order.createdAt).toLocaleDateString('pt-BR')} {new Date(order.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
+        <div className="p-1">
+          <div className="text-center border-b border-dashed border-black pb-2 mb-2">
+            <h2 className="font-bold text-xs uppercase">Oficina Pro</h2>
+            <p className="font-bold mt-1 text-[10px]">O.S. #{order.number.toString().padStart(4, '0')}</p>
+            <p>{new Date(order.createdAt).toLocaleDateString('pt-BR')} {new Date(order.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
+          </div>
+
+          <div className="mb-2 uppercase space-y-0.5 border-b border-dashed border-black pb-1">
+            <p><strong>CLIENTE:</strong> {order.client.name}</p>
+            <p><strong>MOTO:</strong> {order.motorcycle.model}</p>
+            <p><strong>PLACA:</strong> {order.motorcycle.plate.toUpperCase()}</p>
+          </div>
+
+          <div className="font-bold uppercase text-[8px] border-b border-black mb-1">Serviços</div>
+          {order.services.map(s => (
+            <div key={s.id} className="flex justify-between items-start gap-1 mb-1">
+              <span className="flex-1 break-words">{s.description}</span>
+              <span className="font-bold">{s.price.toFixed(2)}</span>
+            </div>
+          ))}
+
+          <div className="font-bold uppercase text-[8px] border-b border-black mb-1 mt-2">Peças Utilizadas</div>
+          {order.items.map(item => (
+            <div key={item.id} className="flex justify-between items-start gap-1 mb-1">
+              <span className="flex-1 truncate">{item.quantity}x {item.product.name}</span>
+              <span className="font-bold">{item.subtotal.toFixed(2)}</span>
+            </div>
+          ))}
+
+          <div className="border-t-2 border-black pt-1 mt-2 space-y-0.5">
+            <div className="flex justify-between text-[7px] uppercase">
+              <span>Mão de Obra:</span>
+              <span>R$ {order.laborValue.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between text-[7px] uppercase border-b border-black pb-1 mb-1">
+              <span>Peças:</span>
+              <span>R$ {totalParts.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between font-black text-[11px]">
+              <span>TOTAL:</span>
+              <span>R$ {order.totalValue.toFixed(2)}</span>
+            </div>
+          </div>
+
+          <div className="mt-8 text-center pt-2">
+            <div className="border-t border-black w-full mb-1"></div>
+            <p className="text-[7px] uppercase font-bold tracking-tighter">Assinatura do Cliente</p>
+          </div>
+
+          <p className="text-center mt-4 text-[7px] italic border-t border-dotted border-black pt-2">Obrigado pela preferência!</p>
+          <div className="h-4"></div> {/* Pequeno respiro final */}
         </div>
-
-        <div className="mb-2 uppercase space-y-0.5 border-b border-dashed border-black pb-1">
-          {/* CLIENTE e MOTO */}
-          <p><strong>CLIENTE:</strong> {order.client.name}</p>
-          <p><strong>MOTO:</strong> {order.motorcycle.model}</p>
-          <p><strong>PLACA:</strong> {order.motorcycle.plate.toUpperCase()}</p>
-        </div>
-
-        {/* Serviços no Recibo */}
-        <div className="font-bold uppercase text-[8px] border-b border-black mb-1">Serviços</div>
-        {order.services.map(s => (
-          <div key={s.id} className="flex justify-between items-start gap-1 mb-1">
-            <span className="flex-1 break-words">{s.description}</span>
-            <span className="font-bold">{s.price.toFixed(2)}</span>
-          </div>
-        ))}
-
-        {/* Peças no Recibo */}
-        <div className="font-bold uppercase text-[8px] border-b border-black mb-1 mt-2">Peças Utilizadas</div>
-        {order.items.map(item => (
-          <div key={item.id} className="flex justify-between items-start gap-1 mb-1">
-            <span className="flex-1 truncate">{item.quantity}x {item.product.name}</span>
-            <span className="font-bold">{item.subtotal.toFixed(2)}</span>
-          </div>
-        ))}
-
-        {/* Totais do Recibo */}
-        <div className="border-t-2 border-black pt-1 mt-2 space-y-0.5">
-          <div className="flex justify-between text-[7px] uppercase">
-            <span>Mão de Obra:</span>
-            <span>R$ {order.laborValue.toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between text-[7px] uppercase">
-            <span>Peças:</span>
-            <span>R$ {totalParts.toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between font-black text-[11px] border-t border-black pt-1 mt-1">
-            <span>TOTAL:</span>
-            <span>R$ {order.totalValue.toFixed(2)}</span>
-          </div>
-        </div>
-
-        <div className="mt-8 text-center pt-2">
-          <div className="border-t border-black w-full mb-1"></div>
-          <p className="text-[7px] uppercase font-bold tracking-tighter">Assinatura do Cliente</p>
-        </div>
-
-        <p className="text-center mt-4 text-[7px] italic border-t border-dotted border-black pt-2">Obrigado pela preferência!</p>
-        <div className="h-10"></div> {/* Espaço para corte manual da bobina */}
       </div>
     </div>
   );
