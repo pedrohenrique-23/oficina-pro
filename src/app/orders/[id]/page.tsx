@@ -46,9 +46,7 @@ export default async function OrderDetailsPage({ params }: OrderDetailsProps) {
   return (
     <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6">
       
-      {/* ==========================================================
-          🖥️ VISÃO DE TELA - Completa e Detalhada (Escondida na Impressão)
-          ========================================================== */}
+      {/* 🖥️ VISÃO DE TELA (Desktop) */}
       <div className="flex justify-between items-center print:hidden">
         <Button variant="ghost" asChild className="gap-2">
           <Link href="/orders">
@@ -84,14 +82,14 @@ export default async function OrderDetailsPage({ params }: OrderDetailsProps) {
 
         <CardContent className="space-y-8 pt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 border-b pb-6">
-            <div className="space-y-1">
+            <div className="space-y-1 text-slate-900">
               <h3 className="text-xs font-bold flex items-center gap-2 uppercase text-muted-foreground">
                 <User className="w-4 h-4" /> Dados do Cliente
               </h3>
               <p className="font-semibold text-lg">{order.client.name}</p>
               <p className="text-sm">Tel: {order.client.phone}</p>
             </div>
-            <div className="space-y-1">
+            <div className="space-y-1 text-slate-900">
               <h3 className="text-xs font-bold flex items-center gap-2 uppercase text-muted-foreground">
                 <Bike className="w-4 h-4" /> Dados do Veículo
               </h3>
@@ -102,19 +100,8 @@ export default async function OrderDetailsPage({ params }: OrderDetailsProps) {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <h3 className="text-xs font-bold flex items-center gap-2 uppercase text-muted-foreground">
-              <ClipboardCheck className="w-4 h-4" /> Observações da Ordem
-            </h3>
-            <div className="bg-muted/30 p-4 rounded-md italic text-sm border-l-4 border-blue-500">
-              {order.description || "Nenhuma descrição detalhada informada."}
-            </div>
-          </div>
-
           <div className="space-y-3">
-            <h3 className="text-xs font-bold uppercase flex items-center gap-2 text-muted-foreground">
-              <Wrench className="w-4 h-4" /> Serviços / Mão de Obra
-            </h3>
+            <h3 className="text-xs font-bold uppercase flex items-center gap-2 text-muted-foreground"><Wrench className="w-4 h-4" /> Serviços</h3>
             <Table className="border text-slate-900">
               <TableBody>
                 {order.services.map(s => (
@@ -128,13 +115,11 @@ export default async function OrderDetailsPage({ params }: OrderDetailsProps) {
           </div>
 
           <div className="space-y-3">
-            <h3 className="text-xs font-bold uppercase flex items-center gap-2 text-muted-foreground">
-              <Package className="w-4 h-4" /> Peças Utilizadas
-            </h3>
+            <h3 className="text-xs font-bold uppercase flex items-center gap-2 text-muted-foreground"><Package className="w-4 h-4" /> Peças</h3>
             <Table className="border text-slate-900">
               <TableBody>
                 {order.items.length === 0 ? (
-                  <TableRow><TableCell className="text-center italic py-4">Nenhuma peça utilizada.</TableCell></TableRow>
+                  <TableRow><TableCell className="text-center italic py-4 text-slate-500">Nenhuma peça utilizada.</TableCell></TableRow>
                 ) : (
                   order.items.map(i => (
                     <TableRow key={i.id}>
@@ -149,78 +134,77 @@ export default async function OrderDetailsPage({ params }: OrderDetailsProps) {
 
           <div className="text-right pt-4 border-t-2 border-double">
             <p className="text-xs font-bold text-muted-foreground uppercase">Valor Total Geral</p>
-            <p className="text-4xl font-black text-blue-900 tracking-tighter text-slate-900">
-              R$ {order.totalValue.toFixed(2)}
-            </p>
+            <p className="text-4xl font-black text-blue-900 tracking-tighter">R$ {order.totalValue.toFixed(2)}</p>
           </div>
         </CardContent>
       </Card>
 
       {/* ==========================================================
-          🚀 VISÃO TÉRMICA (Ultra-Zoom 384px) - Aparece APENAS na Impressão
+          🚀 VISÃO TÉRMICA AJUSTADA (350px para evitar cortes)
           ========================================================== */}
-      <div className="hidden print:block w-[384px] font-mono text-black bg-white mx-auto">
+      <div className="hidden print:block w-[350px] font-mono text-black bg-white mx-auto overflow-hidden">
         <style dangerouslySetInnerHTML={{ __html: `
           @media print {
             @page { size: 58mm auto; margin: 0 !important; }
             html, body {
               margin: 0 !important; padding: 0 !important;
-              width: 384px !important; height: auto !important;
-              zoom: 1.0 !important; overflow: visible !important;
+              width: 350px !important; height: auto !important;
+              zoom: 1.0 !important; overflow: hidden !important;
             }
           }
         `}} />
 
-        <div className="p-2 w-[384px]">
-          <div className="text-center border-b-2 border-black pb-2 mb-4">
-            <h2 className="font-bold text-[24px] uppercase leading-none">Oficina Pro</h2>
-            <p className="text-[14px] mt-1 italic">Especialistas em Duas Rodas</p>
-            <p className="font-bold text-[18px] mt-2 border-y border-black py-1">
+        <div className="p-2 w-full">
+          <div className="text-center border-b-2 border-black pb-2 mb-3">
+            <h2 className="font-bold text-[22px] uppercase leading-tight">Oficina Pro</h2>
+            <p className="text-[12px] italic">Especialistas em Duas Rodas</p>
+            <p className="font-bold text-[16px] mt-1 border-y border-black py-1">
               O.S. #{order.number.toString().padStart(4, '0')}
             </p>
-            <p className="text-[12px]">{new Date(order.createdAt).toLocaleDateString('pt-BR')} {new Date(order.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
+            <p className="text-[11px]">{new Date(order.createdAt).toLocaleDateString('pt-BR')} {new Date(order.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
           </div>
 
-          <div className="mb-4 space-y-1 text-[16px] uppercase border-b border-dashed border-black pb-2">
-            <p><strong>CLIENTE:</strong> {order.client.name}</p>
-            <p><strong>MOTO:</strong> {order.motorcycle.model}</p>
+          <div className="mb-3 space-y-1 text-[15px] uppercase border-b border-dashed border-black pb-2">
+            <p className="truncate"><strong>CLIENTE:</strong> {order.client.name}</p>
+            <p className="truncate"><strong>MOTO:</strong> {order.motorcycle.model}</p>
             <p><strong>PLACA:</strong> {order.motorcycle.plate.toUpperCase()}</p>
           </div>
 
-          <div className="font-bold uppercase text-[14px] border-b border-black mb-2">Serviços / Peças</div>
+          <div className="font-bold uppercase text-[13px] border-b border-black mb-1">Serviços / Peças</div>
           {order.services.map(s => (
-            <div key={s.id} className="flex justify-between items-start gap-1 mb-2 text-[14px]">
-              <span className="flex-1 break-words leading-tight">{s.description}</span>
+            <div key={s.id} className="flex justify-between items-start gap-1 mb-1 text-[13px]">
+              <span className="flex-1 break-words pr-1 leading-tight">{s.description}</span>
               <span className="font-bold whitespace-nowrap">R${s.price.toFixed(2)}</span>
             </div>
           ))}
           {order.items.map(item => (
-            <div key={item.id} className="flex justify-between items-start gap-1 mb-2 text-[14px]">
-              <span className="flex-1 truncate mr-1">{item.quantity}x {item.product.name}</span>
+            <div key={item.id} className="flex justify-between items-start gap-1 mb-1 text-[13px]">
+              <span className="flex-1 truncate pr-1">{item.quantity}x {item.product.name}</span>
               <span className="font-bold whitespace-nowrap">R${item.subtotal.toFixed(2)}</span>
             </div>
           ))}
 
-          <div className="border-t-4 border-black pt-2 mt-4 space-y-1">
-            <div className="flex justify-between text-[14px] uppercase">
+          <div className="border-t-4 border-black pt-2 mt-4">
+            <div className="flex justify-between text-[13px] uppercase">
               <span>Mão de Obra:</span>
               <span>R$ {order.laborValue.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between text-[14px] uppercase border-b border-black pb-1 mb-1">
+            <div className="flex justify-between text-[13px] uppercase border-b border-black pb-1 mb-1">
               <span>Peças:</span>
               <span>R$ {totalParts.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between font-black text-[22px]">
+            <div className="flex justify-between font-black text-[20px] pt-1">
               <span>TOTAL:</span>
               <span>R$ {order.totalValue.toFixed(2)}</span>
             </div>
           </div>
 
-          <div className="mt-12 text-center border-t border-black pt-2">
-            <p className="text-[12px] font-bold uppercase">Assinatura do Cliente</p>
+          <div className="mt-10 text-center border-t border-black pt-2">
+            <div className="border-b border-black w-3/4 mx-auto mb-1"></div>
+            <p className="text-[11px] font-bold uppercase">Assinatura do Cliente</p>
           </div>
 
-          <p className="text-center mt-6 text-[12px] italic border-t border-dotted border-black pt-2">
+          <p className="text-center mt-5 text-[11px] italic border-t border-dotted border-black pt-2">
             Obrigado pela preferência!
           </p>
           <div className="h-6"></div>
