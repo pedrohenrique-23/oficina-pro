@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Bike, User, ClipboardCheck, Wrench, Package } from "lucide-react";
+import { ArrowLeft, Bike, User, Wrench, Package } from "lucide-react";
 import Link from "next/link";
 import { PrintOrderButton } from "../_components/print-order-button";
 import { FinishOrderButton } from "../_components/finish-order-button";
@@ -29,6 +29,7 @@ export default async function OrderDetailsPage({ params }: OrderDetailsProps) {
 
   if (!orderRaw) notFound();
 
+  // Sanitização de Decimal para Number (evita erro de serialização do Next.js)
   const order = {
     ...orderRaw,
     totalValue: Number(orderRaw.totalValue),
@@ -49,7 +50,9 @@ export default async function OrderDetailsPage({ params }: OrderDetailsProps) {
   return (
     <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6">
       
-      {/* VISÃO DE TELA - Escondida na Impressão */}
+      {/* ==========================================================
+          VISÃO DE TELA (Desktop) - Escondida na Impressão
+          ========================================================== */}
       <div className="flex justify-between items-center print:hidden">
         <Button variant="ghost" asChild className="gap-2">
           <Link href="/orders">
@@ -75,7 +78,7 @@ export default async function OrderDetailsPage({ params }: OrderDetailsProps) {
               <p className="text-xs text-muted-foreground italic">Especialistas em Duas Rodas</p>
             </div>
             <div className="text-right">
-              <div className="text-xl font-mono font-bold text-blue-900 italic">
+              <div className="text-xl font-mono font-bold text-blue-900 italic text-slate-900">
                 O.S. #{order.number.toString().padStart(4, '0')}
               </div>
               <p className="text-xs font-bold">{new Date(order.createdAt).toLocaleDateString('pt-BR')}</p>
@@ -97,7 +100,7 @@ export default async function OrderDetailsPage({ params }: OrderDetailsProps) {
                 <Bike className="w-4 h-4" /> Dados do Veículo
               </h3>
               <p className="font-semibold text-lg">{order.motorcycle.brand} {order.motorcycle.model}</p>
-              <p className="text-sm font-mono uppercase bg-slate-100 px-2 py-0.5 rounded inline-block text-slate-900">
+              <p className="text-sm font-mono uppercase bg-slate-100 px-2 py-0.5 rounded inline-block">
                 Placa: {order.motorcycle.plate}
               </p>
             </div>
@@ -142,7 +145,9 @@ export default async function OrderDetailsPage({ params }: OrderDetailsProps) {
         </CardContent>
       </Card>
 
-      {/* 🚀 VISÃO TÉRMICA (Otimizada para 48mm de área de impressão) */}
+      {/* ==========================================================
+          🚀 VISÃO TÉRMICA (48mm) - Ajustada para parar o papel
+          ========================================================== */}
       <div className="hidden print:block w-[48mm] font-mono leading-tight text-black bg-white mx-auto">
         <style dangerouslySetInnerHTML={{ __html: `
           @media print {
@@ -153,13 +158,16 @@ export default async function OrderDetailsPage({ params }: OrderDetailsProps) {
             html, body {
               margin: 0 !important;
               padding: 0 !important;
-              height: auto !important;
+              height: auto !important; /* Essencial para o papel parar no fim */
+              min-height: 0 !important;
+              overflow: visible !important;
               zoom: 100%;
             }
             body {
-              width: 48mm !important;
+              width: 48mm !important; /* Área imprimível do seu driver */
               -webkit-print-color-adjust: exact;
             }
+            /* Esconde links, data e títulos que o navegador tenta injetar */
             footer, header, .header, .footer { display: none !important; }
           }
         `}} />
@@ -173,7 +181,6 @@ export default async function OrderDetailsPage({ params }: OrderDetailsProps) {
 
           <div className="mb-2 uppercase space-y-0.5 border-b border-dashed border-black pb-1 text-[10px]">
             <p><strong>CLIENTE:</strong> {order.client.name}</p>
-            <p><strong>MOTO:</strong> {order.motorcycle.model}</p>
             <p><strong>PLACA:</strong> {order.motorcycle.plate.toUpperCase()}</p>
           </div>
 
@@ -185,7 +192,7 @@ export default async function OrderDetailsPage({ params }: OrderDetailsProps) {
             </div>
           ))}
 
-          <div className="font-bold uppercase text-[9px] border-b border-black mb-1 mt-2">Peças Utilizadas</div>
+          <div className="font-bold uppercase text-[9px] border-b border-black mb-1 mt-2">Peças</div>
           {order.items.map(item => (
             <div key={item.id} className="flex justify-between items-start gap-1 mb-1 text-[10px]">
               <span className="flex-1 truncate">{item.quantity}x {item.product.name}</span>
@@ -193,12 +200,8 @@ export default async function OrderDetailsPage({ params }: OrderDetailsProps) {
             </div>
           ))}
 
-          <div className="border-t-2 border-black pt-1 mt-2 space-y-0.5">
-            <div className="flex justify-between text-[8px] uppercase">
-              <span>M.O: R$ {order.laborValue.toFixed(2)}</span>
-              <span>Peças: R$ {totalParts.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between font-black text-[13px] border-t border-black pt-1 mt-1">
+          <div className="border-t-2 border-black pt-1 mt-2 space-y-1">
+            <div className="flex justify-between font-black text-[13px] pt-1">
               <span>TOTAL:</span>
               <span>R$ {order.totalValue.toFixed(2)}</span>
             </div>
@@ -206,11 +209,14 @@ export default async function OrderDetailsPage({ params }: OrderDetailsProps) {
 
           <div className="mt-8 text-center pt-2">
             <div className="border-t border-black w-full mb-1"></div>
-            <p className="text-[8px] uppercase font-bold tracking-tighter text-black">Assinatura do Cliente</p>
+            <p className="text-[8px] uppercase font-bold tracking-tighter">Assinatura do Cliente</p>
           </div>
 
-          <p className="text-center mt-4 text-[8px] italic border-t border-dotted border-black pt-2">Obrigado pela preferência!</p>
-          <div className="h-4"></div>
+          <p className="text-center mt-4 text-[8px] italic border-t border-dotted border-black pt-2 uppercase">
+            Obrigado pela preferência!
+          </p>
+          
+          <div className="h-4"></div> {/* Pequeno espaço para facilitar o corte manual */}
         </div>
       </div>
     </div>
