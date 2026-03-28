@@ -151,30 +151,31 @@ export default async function OrderDetailsPage({ params }: OrderDetailsProps) {
               margin: 0 !important;
               padding: 0 !important;
               background: white !important;
-              height: auto !important; /* Garante que a altura se ajuste ao conteúdo */
-              min-height: 0 !important; /* Remove qualquer altura mínima */
-              overflow: hidden !important; /* Esconde qualquer overflow que possa causar páginas extras */
+              height: fit-content !important; /* Garante que a altura se ajuste ao conteúdo */
+              min-height: 0 !important; 
+              overflow: hidden !important; 
+              line-height: 1 !important; /* Ajusta o espaçamento entre linhas para ser mais compacto */
             }
             body {
-              display: block; /* Mudar de flex para block para evitar comportamentos inesperados com width */
-              zoom: 1 !important; /* Resetar o zoom para evitar distorções e deixar o width controlar */
-              width: 100% !important; /* Garante que o body ocupe 100% da largura do html/page */
-              max-width: 100% !important;
+              display: block; 
+              zoom: 2.8 !important; /* Aumentar o zoom para preencher a largura e aumentar as letras */
+              width: 300px !important; /* Largura fixa em pixels para 58mm */
+              max-width: 300px !important;
             }
-            /* Aumentar drasticamente os tamanhos de fonte */
-            .text-\[14px\] { font-size: 28px !important; } /* Dobrado */
-            .text-\[12px\] { font-size: 24px !important; } /* Dobrado */
-            .text-\[10px\] { font-size: 20px !important; } /* Dobrado */
-            .text-\[9px\] { font-size: 18px !important; } /* Dobrado */
-            .text-\[8px\] { font-size: 16px !important; } /* Dobrado */
+            /* Aumentar os tamanhos de fonte */
+            .text-\[14px\] { font-size: 44px !important; } 
+            .text-\[12px\] { font-size: 38px !important; } 
+            .text-\[10px\] { font-size: 34px !important; } 
+            .text-\[9px\] { font-size: 30px !important; } 
+            .text-\[8px\] { font-size: 28px !important; } 
             
-            /* Ajustar espaçamentos para evitar quebras */
-            .py-2 { padding-top: 0.5rem !important; padding-bottom: 0.5rem !important; }
-            .pb-1 { padding-bottom: 0.25rem !important; }
-            .mb-2 { margin-bottom: 0.5rem !important; }
-            .mt-1 { margin-top: 0.25rem !important; }
-            .mt-3 { margin-top: 0.75rem !important; }
-            .mt-6 { margin-top: 1.5rem !important; }
+            /* Ajustar espaçamentos para evitar quebras e reduzir espaço em branco */
+            .py-2 { padding-top: 0.05rem !important; padding-bottom: 0.05rem !important; }
+            .pb-1 { padding-bottom: 0.02rem !important; }
+            .mb-2 { margin-bottom: 0.05rem !important; }
+            .mt-1 { margin-top: 0.02rem !important; }
+            .mt-3 { margin-top: 0.05rem !important; }
+            .mt-6 { margin-top: 0.1rem !important; }
 
             /* Adicionar regras para garantir que o conteúdo não ultrapasse a largura */
             .w-full { width: 100% !important; }
@@ -182,10 +183,32 @@ export default async function OrderDetailsPage({ params }: OrderDetailsProps) {
             .break-words { word-break: break-all !important; }
             /* Remover a largura fixa do div pai se houver */
             .w-\[220px\] { width: auto !important; }
+
+            /* Para tentar cortar o papel após o conteúdo */
+            .print-container { 
+              display: block !important; /* Usar block para melhor controle de fluxo */
+              margin-bottom: 0 !important; 
+              padding-bottom: 0 !important;
+            }
+            /* Remover margens e paddings de elementos internos que possam causar espaço extra */
+            .print-container > div:last-child,
+            .print-container p:last-child {
+              margin-bottom: 0 !important;
+              padding-bottom: 0 !important;
+            }
+            /* Forçar o corte no final do conteúdo */
+            .print-container:after {
+              content: '';
+              display: block;
+              height: 0;
+              margin: 0;
+              padding: 0;
+              overflow: hidden;
+            }
           }
         `}} />
 
-        <div className="w-full py-2">
+        <div className="w-full py-2 print-container">
           <div className="text-center border-b-2 border-black pb-1 mb-2">
             <h2 className="font-bold text-[14px] uppercase leading-none">Oficina Pro</h2>
             <div className="font-bold text-[12px] mt-1 border-y border-black py-0.5">O.S. #{order.number.toString().padStart(4, '0')}</div>
