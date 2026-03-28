@@ -1,7 +1,7 @@
 import prisma from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Bike, User, ClipboardCheck, Wrench, Package } from "lucide-react";
 import Link from "next/link";
@@ -15,20 +15,20 @@ interface OrderDetailsProps {
 export default async function OrderDetailsPage({ params }: OrderDetailsProps) {
   const { id } = await params;
 
+  // 1. Busca os dados no banco (Supabase via Prisma)
   const orderRaw = await prisma.orderService.findUnique({
     where: { id },
     include: {
       client: true,
       motorcycle: true,
       services: true, 
-      items: {
-        include: { product: true }
-      }
+      items: { include: { product: true } }
     }
   });
 
   if (!orderRaw) notFound();
 
+  // 2. Converte Decimal para Number para evitar erros de serialização
   const order = {
     ...orderRaw,
     totalValue: Number(orderRaw.totalValue),
@@ -46,16 +46,21 @@ export default async function OrderDetailsPage({ params }: OrderDetailsProps) {
   return (
     <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6">
       
-      {/* 🖥️ VISÃO DE TELA (Desktop) - COMPLETA */}
+      {/* ==========================================================
+          🖥️ VISÃO DE TELA (Desktop) - Escondida na Impressão
+          ========================================================== */}
       <div className="flex justify-between items-center print:hidden">
         <Button variant="ghost" asChild className="gap-2">
           <Link href="/orders">
-            <ArrowLeft className="w-4 h-4" /> Voltar
+            <ArrowLeft className="w-4 h-4" /> Voltar para Lista
           </Link>
         </Button>
         <div className="flex gap-2">
           {order.status !== 'FINISHED' && (
-            <FinishOrderButton id={order.id} orderNumber={order.number.toString()} />
+            <FinishOrderButton 
+              id={order.id} 
+              orderNumber={order.number.toString()} 
+            />
           )}
           <PrintOrderButton />
         </div>
@@ -78,57 +83,50 @@ export default async function OrderDetailsPage({ params }: OrderDetailsProps) {
         </CardHeader>
 
         <CardContent className="space-y-8 pt-6">
-          {/* Dados do Cliente e Veículo */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 border-b pb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 border-b pb-6 text-slate-900">
             <div className="space-y-1">
-              <h3 className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-2">
-                <User className="w-4 h-4" /> Cliente
+              <h3 className="text-xs font-bold flex items-center gap-2 uppercase text-muted-foreground">
+                <User className="w-4 h-4" /> Dados do Cliente
               </h3>
-              <p className="font-semibold text-slate-900">{order.client.name}</p>
-              <p className="text-sm text-slate-600">{order.client.phone}</p>
+              <p className="font-semibold text-lg">{order.client.name}</p>
+              <p className="text-sm">Tel: {order.client.phone}</p>
             </div>
             <div className="space-y-1">
-              <h3 className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-2">
-                <Bike className="w-4 h-4" /> Veículo
+              <h3 className="text-xs font-bold flex items-center gap-2 uppercase text-muted-foreground">
+                <Bike className="w-4 h-4" /> Dados do Veículo
               </h3>
-              <p className="font-semibold text-slate-900">{order.motorcycle.brand} {order.motorcycle.model}</p>
-              <p className="text-sm font-mono uppercase bg-slate-100 px-2 py-0.5 rounded inline-block text-slate-700">
+              <p className="font-semibold text-lg">{order.motorcycle.brand} {order.motorcycle.model}</p>
+              <p className="text-sm font-mono uppercase bg-slate-100 px-2 py-0.5 rounded inline-block">
                 Placa: {order.motorcycle.plate}
               </p>
             </div>
           </div>
 
-          {/* Serviços */}
-          <div className="space-y-3 text-slate-900">
-            <h3 className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-2">
-              <Wrench className="w-4 h-4" /> Serviços
-            </h3>
-            <Table className="border">
+          <div className="space-y-3">
+            <h3 className="text-xs font-bold uppercase flex items-center gap-2 text-muted-foreground"><Wrench className="w-4 h-4" /> Serviços / Mão de Obra</h3>
+            <Table className="border text-slate-900">
               <TableBody>
                 {order.services.map(s => (
                   <TableRow key={s.id}>
                     <TableCell className="font-medium">{s.description}</TableCell>
-                    <TableCell className="text-right font-bold italic">R$ {s.price.toFixed(2)}</TableCell>
+                    <TableCell className="text-right font-bold">R$ {s.price.toFixed(2)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
           </div>
 
-          {/* Peças */}
-          <div className="space-y-3 text-slate-900">
-            <h3 className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-2">
-              <Package className="w-4 h-4" /> Peças
-            </h3>
-            <Table className="border">
+          <div className="space-y-3">
+            <h3 className="text-xs font-bold uppercase flex items-center gap-2 text-muted-foreground"><Package className="w-4 h-4" /> Peças Utilizadas</h3>
+            <Table className="border text-slate-900">
               <TableBody>
                 {order.items.length === 0 ? (
-                  <TableRow><TableCell className="text-center italic py-4">Nenhuma peça.</TableCell></TableRow>
+                  <TableRow><TableCell className="text-center italic py-4 text-slate-500">Nenhuma peça utilizada.</TableCell></TableRow>
                 ) : (
                   order.items.map(i => (
                     <TableRow key={i.id}>
                       <TableCell className="font-medium">{i.product.name} ({i.quantity}x)</TableCell>
-                      <TableCell className="text-right font-bold text-blue-700 italic">R$ {i.subtotal.toFixed(2)}</TableCell>
+                      <TableCell className="text-right font-bold text-blue-700">R$ {i.subtotal.toFixed(2)}</TableCell>
                     </TableRow>
                   ))
                 )}
@@ -137,87 +135,94 @@ export default async function OrderDetailsPage({ params }: OrderDetailsProps) {
           </div>
 
           <div className="text-right pt-4 border-t-2 border-double">
-            <p className="text-xs font-bold text-muted-foreground uppercase">Valor Total</p>
+            <p className="text-xs font-bold text-muted-foreground uppercase">Valor Total Geral</p>
             <p className="text-4xl font-black text-blue-900 tracking-tighter">R$ {order.totalValue.toFixed(2)}</p>
           </div>
         </CardContent>
       </Card>
 
       {/* ==========================================================
-          🚀 VISÃO TÉRMICA (45mm Safe Zone) - RESOLVE PAPEL INFINITO
+          🚀 VISÃO TÉRMICA DEFINITIVA (380px) - Só aparece na Impressão
           ========================================================== */}
-      <div className="hidden print:block w-[45mm] font-mono text-black bg-white mx-auto">
+      <div className="hidden print:block w-[380px] font-mono text-black bg-white mx-auto">
         <style dangerouslySetInnerHTML={{ __html: `
           @media print {
             @page { 
               size: 58mm auto; 
-              margin: 0mm !important; 
+              margin: 0 !important; 
             }
             html, body {
               margin: 0 !important;
               padding: 0 !important;
-              background: white !important;
-              height: auto !important;
+              width: 380px !important;
+              height: auto !important; /* 👈 Mata o loop de papel infinito */
               overflow: visible !important;
-            }
-            body {
-              display: flex;
-              justify-content: center;
-              align-items: flex-start;
-              width: 58mm !important;
             }
           }
         `}} />
 
-        <div className="w-[45mm] py-2 text-left">
-          <div className="text-center border-b-2 border-black pb-1 mb-2">
-            <h2 className="font-bold text-[18px] uppercase leading-none">Oficina Pro</h2>
-            <p className="font-bold text-[12px] mt-1 border-y border-black py-1">O.S. #{order.number.toString().padStart(4, '0')}</p>
-            <p className="text-[9px]">{new Date(order.createdAt).toLocaleDateString('pt-BR')} {new Date(order.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
+        <div className="p-2 w-full">
+          {/* Cabeçalho "Grande" para ser legível na bobina */}
+          <div className="text-center border-b-2 border-black pb-2 mb-4">
+            <h2 className="font-bold text-[24px] uppercase leading-none">Oficina Pro</h2>
+            <p className="text-[14px] mt-1 italic">Especialistas em Duas Rodas</p>
+            <div className="font-bold text-[20px] mt-2 border-y border-black py-1">
+              O.S. #{order.number.toString().padStart(4, '0')}
+            </div>
+            <p className="text-[12px] mt-1">
+              {new Date(order.createdAt).toLocaleDateString('pt-BR')} {new Date(order.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+            </p>
           </div>
 
-          <div className="mb-2 uppercase text-[11px] border-b border-dashed border-black pb-1 space-y-0.5">
+          {/* Dados do Cliente */}
+          <div className="mb-4 space-y-1 text-[16px] uppercase border-b border-dashed border-black pb-2">
             <p><strong>CLI:</strong> {order.client.name}</p>
             <p><strong>MOTO:</strong> {order.motorcycle.model}</p>
             <p><strong>PLACA:</strong> {order.motorcycle.plate.toUpperCase()}</p>
           </div>
 
-          <div className="space-y-1">
+          {/* Listagem de Itens */}
+          <div className="font-bold uppercase text-[15px] border-b border-black mb-2">Serviços / Peças</div>
+          <div className="space-y-2">
             {order.services.map(s => (
-              <div key={s.id} className="flex justify-between items-start gap-1 text-[11px]">
+              <div key={s.id} className="flex justify-between items-start gap-1 text-[15px]">
                 <span className="flex-1 break-words leading-tight">{s.description}</span>
                 <span className="font-bold">R${s.price.toFixed(2)}</span>
               </div>
             ))}
             {order.items.map(item => (
-              <div key={item.id} className="flex justify-between items-start gap-1 text-[11px]">
-                <span className="flex-1 truncate">{item.quantity}x {item.product.name}</span>
+              <div key={item.id} className="flex justify-between items-start gap-1 text-[15px]">
+                <span className="flex-1 truncate mr-1">{item.quantity}x {item.product.name}</span>
                 <span className="font-bold">R${item.subtotal.toFixed(2)}</span>
               </div>
             ))}
           </div>
 
-          <div className="border-t-2 border-black pt-1 mt-3 space-y-0.5">
-            <div className="flex justify-between text-[10px] uppercase">
+          {/* Resumo de Valores */}
+          <div className="border-t-2 border-black pt-2 mt-6 space-y-1">
+            <div className="flex justify-between text-[14px] uppercase">
               <span>Mão de Obra:</span>
               <span>R$ {order.laborValue.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between font-black text-[16px] pt-1">
+            <div className="flex justify-between text-[14px] uppercase border-b border-black pb-1 mb-1">
+              <span>Peças:</span>
+              <span>R$ {totalParts.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between font-black text-[24px] pt-1">
               <span>TOTAL:</span>
               <span>R$ {order.totalValue.toFixed(2)}</span>
             </div>
           </div>
 
-          <div className="mt-10 text-center border-t border-black pt-1">
-            <p className="text-[10px] font-bold uppercase">Assinatura do Cliente</p>
+          {/* Rodapé e Assinatura */}
+          <div className="mt-12 text-center border-t border-black pt-2">
+            <p className="text-[13px] font-bold uppercase">Assinatura do Cliente</p>
           </div>
 
-          <p className="text-center mt-4 text-[9px] italic border-t border-dotted border-black pt-2">
+          <p className="text-center mt-6 text-[12px] italic border-t border-dotted border-black pt-2">
             Obrigado pela preferência!
           </p>
-          
-          {/* O Ponto de ancoragem final */}
-          <div className="h-4 text-center text-[8px]">.</div>
+          <div className="h-6"></div>
         </div>
       </div>
     </div>
