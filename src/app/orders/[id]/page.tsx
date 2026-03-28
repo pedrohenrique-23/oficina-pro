@@ -156,8 +156,8 @@ export default async function OrderDetailsPage({ params }: OrderDetailsProps) {
             }
             body {
               display: block; /* Mudar de flex para block para evitar comportamentos inesperados com width */
-              /* Ajuste o zoom para preencher a largura. Pode ser necessário testar valores como 1.5, 1.8, 2.0 */
-              zoom: 1.8 !important; 
+              /* Ajuste o zoom para preencher a largura. Aumentado para 2.0 */
+              zoom: 2.0 !important; 
               width: 380px !important; /* Força uma largura em pixels que geralmente funciona para 58mm */
               max-width: 380px !important;
             }
@@ -217,7 +217,7 @@ export default async function OrderDetailsPage({ params }: OrderDetailsProps) {
           <p className="text-center mt-3 text-[8px] italic border-t border-dotted border-black pt-1">
             Obrigado pela preferência!
           </p>
-          <div className="h-2">.</div>
+          {/* Removido o div className="h-2" para eliminar o espaço em branco extra */}
         </div>
       </div>
     </div>
