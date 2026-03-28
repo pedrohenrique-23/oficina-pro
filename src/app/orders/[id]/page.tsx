@@ -130,7 +130,7 @@ export default async function OrderDetailsPage({ params }: OrderDetailsProps) {
           </div>
 
           <div className="text-right pt-4 border-t-2 border-double">
-            <p className="text-xs font-bold text-muted-foreground uppercase">Valor Total</p>
+            <p className="text-xs font-bold uppercase text-muted-foreground">Valor Total</p>
             <p className="text-4xl font-black text-blue-900 tracking-tighter">R$ {order.totalValue.toFixed(2)}</p>
           </div>
         </CardContent>
@@ -151,22 +151,31 @@ export default async function OrderDetailsPage({ params }: OrderDetailsProps) {
               margin: 0 !important;
               padding: 0 !important;
               background: white !important;
-              height: auto !important;
-              overflow: visible !important;
+              height: auto !important; /* Garante que a altura se ajuste ao conteúdo */
+              min-height: 0 !important; /* Remove qualquer altura mínima */
+              overflow: hidden !important; /* Esconde qualquer overflow que possa causar páginas extras */
             }
             body {
               display: block; /* Mudar de flex para block para evitar comportamentos inesperados com width */
-              /* Ajuste o zoom para preencher a largura. Aumentado para 2.0 */
-              zoom: 2.0 !important; 
-              width: 380px !important; /* Força uma largura em pixels que geralmente funciona para 58mm */
-              max-width: 380px !important;
+              zoom: 1 !important; /* Resetar o zoom para evitar distorções e deixar o width controlar */
+              width: 100% !important; /* Garante que o body ocupe 100% da largura do html/page */
+              max-width: 100% !important;
             }
-            /* Ajustar tamanhos de fonte e espaçamentos se necessário */
-            .text-\[14px\] { font-size: 14px !important; }
-            .text-\[12px\] { font-size: 12px !important; }
-            .text-\[10px\] { font-size: 10px !important; }
-            .text-\[9px\] { font-size: 9px !important; }
-            .text-\[8px\] { font-size: 8px !important; }
+            /* Aumentar drasticamente os tamanhos de fonte */
+            .text-\[14px\] { font-size: 28px !important; } /* Dobrado */
+            .text-\[12px\] { font-size: 24px !important; } /* Dobrado */
+            .text-\[10px\] { font-size: 20px !important; } /* Dobrado */
+            .text-\[9px\] { font-size: 18px !important; } /* Dobrado */
+            .text-\[8px\] { font-size: 16px !important; } /* Dobrado */
+            
+            /* Ajustar espaçamentos para evitar quebras */
+            .py-2 { padding-top: 0.5rem !important; padding-bottom: 0.5rem !important; }
+            .pb-1 { padding-bottom: 0.25rem !important; }
+            .mb-2 { margin-bottom: 0.5rem !important; }
+            .mt-1 { margin-top: 0.25rem !important; }
+            .mt-3 { margin-top: 0.75rem !important; }
+            .mt-6 { margin-top: 1.5rem !important; }
+
             /* Adicionar regras para garantir que o conteúdo não ultrapasse a largura */
             .w-full { width: 100% !important; }
             .flex-1 { flex: 1 1 0% !important; }
@@ -217,7 +226,6 @@ export default async function OrderDetailsPage({ params }: OrderDetailsProps) {
           <p className="text-center mt-3 text-[8px] italic border-t border-dotted border-black pt-1">
             Obrigado pela preferência!
           </p>
-          {/* Removido o div className="h-2" para eliminar o espaço em branco extra */}
         </div>
       </div>
     </div>
