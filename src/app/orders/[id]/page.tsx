@@ -1,51 +1,57 @@
 import prisma from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Bike, User, ClipboardCheck, Wrench, Package } from "lucide-react";
+import { ArrowLeft, Bike, User } from "lucide-react";
 import Link from "next/link";
 import { PrintOrderButton } from "../_components/print-order-button";
 import { FinishOrderButton } from "../_components/finish-order-button";
 
 interface OrderDetailsProps {
-  params: Promise<{ id: string }>;
+  params: { id: string };
 }
 
+// Helper function para formatar os dados do pedido
+const formatOrderData = (orderRaw: any) => {
+  const order = {
+    ...orderRaw,
+    totalValue: Number(orderRaw.totalValue),
+    laborValue: Number(orderRaw.laborValue),
+    services: orderRaw.services.map((s: any) => ({
+      ...s,
+      price: Number(s.price),
+    })),
+    items: orderRaw.items.map((item: any) => ({
+      ...item,
+      unitPrice: Number(item.unitPrice),
+      subtotal: Number(item.quantity) * Number(item.unitPrice),
+    })),
+  };
+  return order;
+};
+
 export default async function OrderDetailsPage({ params }: OrderDetailsProps) {
-  const { id } = await params;
+  const { id } = params;
 
   const orderRaw = await prisma.orderService.findUnique({
     where: { id },
     include: {
       client: true,
       motorcycle: true,
-      services: true, 
+      services: true,
       items: {
-        include: { product: true }
-      }
-    }
+        include: { product: true },
+      },
+    },
   });
 
   if (!orderRaw) notFound();
 
-  const order = {
-    ...orderRaw,
-    totalValue: Number(orderRaw.totalValue),
-    laborValue: Number(orderRaw.laborValue),
-    services: orderRaw.services.map(s => ({ ...s, price: Number(s.price) })),
-    items: orderRaw.items.map(item => ({
-      ...item,
-      unitPrice: Number(item.unitPrice),
-      subtotal: Number(item.quantity) * Number(item.unitPrice)
-    }))
-  };
-
-  const totalParts = order.totalValue - order.laborValue;
+  const order = formatOrderData(orderRaw);
 
   return (
     <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6">
-      
       {/* 🖥️ VISÃO DE TELA (Desktop) - COMPLETA */}
       <div className="flex justify-between items-center print:hidden">
         <Button variant="ghost" asChild className="gap-2">
@@ -139,7 +145,7 @@ export default async function OrderDetailsPage({ params }: OrderDetailsProps) {
       {/* ==========================================================
           🚀 VISÃO TÉRMICA (O "Nuclear Zoom" para 58mm)
           ========================================================== */}
-      <div className="hidden print:block w-[220px] font-mono text-black bg-white mx-auto">
+      <div className="hidden print:block font-mono text-black bg-white mx-auto">
         <style dangerouslySetInnerHTML={{ __html: `
           @media print {
             @page { 
@@ -147,6 +153,7 @@ export default async function OrderDetailsPage({ params }: OrderDetailsProps) {
               margin: 0 !important; 
             }
             html, body {
+              width: 58mm; /* Define a largura explícita para o corpo da página */
               margin: 0 !important;
               padding: 0 !important;
               background: white !important;
@@ -154,11 +161,21 @@ export default async function OrderDetailsPage({ params }: OrderDetailsProps) {
               overflow: visible !important;
             }
             body {
-              display: flex;
-              justify-content: center;
-              /* 🚀 ZOOM: Isso vai esticar o conteúdo para ocupar o papel todo */
-              zoom: 1.8 !important; 
+              display: block; /* Mudar de flex para block para evitar comportamentos inesperados com width */
+              zoom: 1 !important; /* Resetar o zoom ou remover completamente */
             }
+            /* Ajustar tamanhos de fonte e espaçamentos se necessário */
+            .text-\[14px\] { font-size: 14px !important; }
+            .text-\[12px\] { font-size: 12px !important; }
+            .text-\[10px\] { font-size: 10px !important; }
+            .text-\[9px\] { font-size: 9px !important; }
+            .text-\[8px\] { font-size: 8px !important; }
+            /* Adicionar regras para garantir que o conteúdo não ultrapasse a largura */
+            .w-full { width: 100% !important; }
+            .flex-1 { flex: 1 1 0% !important; }
+            .break-words { word-break: break-all !important; }
+            /* Remover a largura fixa do div pai se houver */
+            .w-\[220px\] { width: auto !important; }
           }
         `}} />
 
