@@ -241,11 +241,6 @@ export default async function OrderDetailsPage({ params }: OrderDetailsProps) {
               <span>R$ {order.totalValue.toFixed(2)}</span>
             </div>
           </div>
-
-          <div className="mt-6 text-center border-t border-black pt-1">
-            <p className="text-[8px] uppercase font-bold">Assinatura</p>
-          </div>
-
           <p className="text-center mt-3 text-[8px] italic border-t border-dotted border-black pt-1">
             Obrigado pela preferência!
           </p>
