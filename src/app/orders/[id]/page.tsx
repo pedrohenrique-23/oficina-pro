@@ -156,7 +156,10 @@ export default async function OrderDetailsPage({ params }: OrderDetailsProps) {
             }
             body {
               display: block; /* Mudar de flex para block para evitar comportamentos inesperados com width */
-              zoom: 1 !important; /* Resetar o zoom para evitar distorções e deixar o width controlar */
+              /* Ajuste o zoom para preencher a largura. Pode ser necessário testar valores como 1.5, 1.8, 2.0 */
+              zoom: 1.8 !important; 
+              width: 380px !important; /* Força uma largura em pixels que geralmente funciona para 58mm */
+              max-width: 380px !important;
             }
             /* Ajustar tamanhos de fonte e espaçamentos se necessário */
             .text-\[14px\] { font-size: 14px !important; }
