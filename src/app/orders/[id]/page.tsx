@@ -46,7 +46,7 @@ export default async function OrderDetailsPage({ params }: OrderDetailsProps) {
   return (
     <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6">
       
-      {/* 🖥️ VISÃO DE TELA (Desktop) */}
+      {/* 🖥️ VISÃO DE TELA (Desktop) - COMPLETA */}
       <div className="flex justify-between items-center print:hidden">
         <Button variant="ghost" asChild className="gap-2">
           <Link href="/orders">
@@ -111,7 +111,7 @@ export default async function OrderDetailsPage({ params }: OrderDetailsProps) {
             </Table>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-3 text-slate-900">
             <h3 className="text-xs font-bold uppercase text-muted-foreground">Peças</h3>
             <Table className="border">
               <TableBody>
@@ -137,7 +137,7 @@ export default async function OrderDetailsPage({ params }: OrderDetailsProps) {
       </Card>
 
       {/* ==========================================================
-          🚀 VISÃO TÉRMICA CORRIGIDA (Sem espaço branco extra)
+          🚀 VISÃO TÉRMICA (Ocupa 100% da bobina sem loop de papel)
           ========================================================== */}
       <div className="hidden print:block font-mono text-black bg-white mx-auto">
         <style dangerouslySetInnerHTML={{ __html: `
@@ -150,66 +150,67 @@ export default async function OrderDetailsPage({ params }: OrderDetailsProps) {
               width: 58mm !important;
               margin: 0 !important;
               padding: 0 !important;
-              height: auto !important;
+              height: auto !important; /* 👈 Crucial para parar o papel */
               min-height: 0 !important;
               overflow: visible !important;
             }
             body {
               display: block;
-              /* Zoom reduzido para 1.5 e fontes fixas para maior controle */
-              zoom: 1.5 !important; 
-              width: 100% !important;
+              background: white !important;
             }
-            /* Remove espaços fantasmas de elementos ocultos */
-            .print-hidden { display: none !important; }
           }
         `}} />
 
-        <div className="w-full py-2 px-1" style={{ marginBottom: '0', paddingBottom: '0' }}>
-          <div className="text-center border-b-2 border-black pb-1 mb-2">
-            <h2 className="font-bold text-[18px] uppercase">Oficina Pro</h2>
-            <div className="font-bold text-[14px] mt-1 border-y border-black py-1">O.S. #{order.number.toString().padStart(4, '0')}</div>
-            <p className="text-[11px]">{new Date(order.createdAt).toLocaleDateString('pt-BR')} {new Date(order.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
+        {/* Container principal travado em 384px (largura nativa da PT-210) */}
+        <div className="w-[384px] p-2" style={{ height: 'auto' }}>
+          <div className="text-center border-b-2 border-black pb-2 mb-3">
+            <h2 className="font-bold text-[26px] uppercase leading-none">Oficina Pro</h2>
+            <p className="text-[14px] italic mt-1">Especialistas em Duas Rodas</p>
+            <div className="font-bold text-[20px] mt-2 border-y-2 border-black py-1">
+               O.S. #{order.number.toString().padStart(4, '0')}
+            </div>
+            <p className="text-[12px]">{new Date(order.createdAt).toLocaleDateString('pt-BR')} {new Date(order.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
           </div>
 
-          <div className="mb-2 uppercase text-[12px] space-y-1">
+          <div className="mb-4 uppercase text-[16px] space-y-1 border-b border-dashed border-black pb-2">
             <p><strong>CLI:</strong> {order.client.name}</p>
+            <p><strong>MOTO:</strong> {order.motorcycle.model}</p>
             <p><strong>PLACA:</strong> {order.motorcycle.plate.toUpperCase()}</p>
           </div>
 
-          <div className="space-y-1 border-t border-black pt-1">
+          <div className="space-y-2">
             {order.services.map(s => (
-              <div key={s.id} className="flex justify-between items-start gap-1 text-[11px]">
+              <div key={s.id} className="flex justify-between items-start gap-1 text-[15px]">
                 <span className="flex-1 break-words leading-tight">{s.description}</span>
-                <span className="font-bold whitespace-nowrap">R${s.price.toFixed(2)}</span>
+                <span className="font-bold">R${s.price.toFixed(2)}</span>
               </div>
             ))}
             {order.items.map(item => (
-              <div key={item.id} className="flex justify-between items-start gap-1 text-[11px]">
+              <div key={item.id} className="flex justify-between items-start gap-1 text-[15px]">
                 <span className="flex-1 truncate">{item.quantity}x {item.product.name}</span>
-                <span className="font-bold whitespace-nowrap">R${item.subtotal.toFixed(2)}</span>
+                <span className="font-bold">R${item.subtotal.toFixed(2)}</span>
               </div>
             ))}
           </div>
 
-          <div className="border-t-2 border-black pt-1 mt-3">
-            <div className="flex justify-between font-black text-[18px]">
+          <div className="border-t-4 border-black pt-2 mt-5">
+            <div className="flex justify-between font-black text-[24px]">
               <span>TOTAL:</span>
               <span>R$ {order.totalValue.toFixed(2)}</span>
             </div>
           </div>
 
-          <div className="mt-8 text-center border-t border-black pt-2">
+          <div className="mt-12 text-center border-t border-black pt-2">
             <div className="border-b border-black w-3/4 mx-auto mb-1"></div>
-            <p className="text-[11px] uppercase font-bold">Assinatura</p>
+            <p className="text-[14px] uppercase font-bold">Assinatura</p>
           </div>
 
-          <p className="text-center mt-4 text-[11px] italic border-t border-dotted border-black pt-2 mb-0 pb-0">
+          <p className="text-center mt-6 text-[14px] italic border-t border-dotted border-black pt-2 mb-0">
             Obrigado pela preferência!
           </p>
           
-          {/* Marcador de fim absoluto para o driver da impressora */}
-          <div style={{ height: '1px', overflow: 'hidden' }}>.</div>
+          {/* Marcador técnico de fim de conteúdo */}
+          <div className="h-1 overflow-hidden">.</div>
         </div>
       </div>
     </div>
