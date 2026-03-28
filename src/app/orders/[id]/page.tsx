@@ -1,57 +1,51 @@
 import prisma from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Bike, User } from "lucide-react";
+import { ArrowLeft, Bike, User, ClipboardCheck, Wrench, Package } from "lucide-react";
 import Link from "next/link";
 import { PrintOrderButton } from "../_components/print-order-button";
 import { FinishOrderButton } from "../_components/finish-order-button";
 
 interface OrderDetailsProps {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
-// Helper function para formatar os dados do pedido
-const formatOrderData = (orderRaw: any) => {
-  const order = {
-    ...orderRaw,
-    totalValue: Number(orderRaw.totalValue),
-    laborValue: Number(orderRaw.laborValue),
-    services: orderRaw.services.map((s: any) => ({
-      ...s,
-      price: Number(s.price),
-    })),
-    items: orderRaw.items.map((item: any) => ({
-      ...item,
-      unitPrice: Number(item.unitPrice),
-      subtotal: Number(item.quantity) * Number(item.unitPrice),
-    })),
-  };
-  return order;
-};
-
 export default async function OrderDetailsPage({ params }: OrderDetailsProps) {
-  const { id } = params;
+  const { id } = await params;
 
   const orderRaw = await prisma.orderService.findUnique({
     where: { id },
     include: {
       client: true,
       motorcycle: true,
-      services: true,
+      services: true, 
       items: {
-        include: { product: true },
-      },
-    },
+        include: { product: true }
+      }
+    }
   });
 
   if (!orderRaw) notFound();
 
-  const order = formatOrderData(orderRaw);
+  const order = {
+    ...orderRaw,
+    totalValue: Number(orderRaw.totalValue),
+    laborValue: Number(orderRaw.laborValue),
+    services: orderRaw.services.map(s => ({ ...s, price: Number(s.price) })),
+    items: orderRaw.items.map(item => ({
+      ...item,
+      unitPrice: Number(item.unitPrice),
+      subtotal: Number(item.quantity) * Number(item.unitPrice)
+    }))
+  };
+
+  const totalParts = order.totalValue - order.laborValue;
 
   return (
     <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6">
+      
       {/* 🖥️ VISÃO DE TELA (Desktop) - COMPLETA */}
       <div className="flex justify-between items-center print:hidden">
         <Button variant="ghost" asChild className="gap-2">
@@ -153,7 +147,7 @@ export default async function OrderDetailsPage({ params }: OrderDetailsProps) {
               margin: 0 !important; 
             }
             html, body {
-              width: 58mm; /* Define a largura explícita para o corpo da página */
+              width: 58mm !important; /* Define a largura explícita para o corpo da página */
               margin: 0 !important;
               padding: 0 !important;
               background: white !important;
@@ -162,7 +156,7 @@ export default async function OrderDetailsPage({ params }: OrderDetailsProps) {
             }
             body {
               display: block; /* Mudar de flex para block para evitar comportamentos inesperados com width */
-              zoom: 1 !important; /* Resetar o zoom ou remover completamente */
+              zoom: 1 !important; /* Resetar o zoom para evitar distorções e deixar o width controlar */
             }
             /* Ajustar tamanhos de fonte e espaçamentos se necessário */
             .text-\[14px\] { font-size: 14px !important; }
